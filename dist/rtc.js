@@ -1,3 +1,17 @@
+const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function openCamera(){
+ const attempts=[{width:640,height:360},true],failures=[];
+ try{for(const device of await navigator.mediaDevices.enumerateDevices())if(device.kind==='videoinput'&&device.deviceId)attempts.push({deviceId:{exact:device.deviceId}});}catch{}
+ for(const video of attempts)try{
+  const stream=await navigator.mediaDevices.getUserMedia({video,audio:false});
+  await delay(250);
+  const track=stream.getVideoTracks?.()[0]||stream.getTracks()[0];
+  if(track?.readyState==='live')return stream;
+  for(const item of stream.getTracks())item.stop();
+  failures.push('pista terminada');
+ }catch(error){if(['NotAllowedError','SecurityError'].includes(error?.name))throw error;failures.push((error?.name||'Error')+': '+(error?.message||''));}
+ throw new Error('Ninguna cámara entregó una pista activa. '+failures.join(' · '));
+}
 export class VoiceRoom {
  constructor({id,send,iceServers,onStream,onStatus}) {Object.assign(this,{id,send,iceServers,onStream,onStatus});this.peers=new Map();this.local={audio:null,video:null};this.localStreams={audio:null,video:null};}
  async connect(id) {
@@ -24,7 +38,7 @@ export class VoiceRoom {
   this.local[kind]=null;this.localStreams[kind]=null;
   let stream;
   if(kind==='audio')stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
-  else stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:360},audio:false});
+  else stream=await openCamera();
   this.localStreams[kind]=stream;this.local[kind]=stream.getTracks()[0];if(!this.local[kind]||this.local[kind].readyState==='ended')throw new Error('No se recibió una pista de '+kind);this.local[kind].enabled=true;await Promise.allSettled([...this.peers.values()].filter(e=>e[kind]).map(e=>e[kind].sender.replaceTrack(this.local[kind])));return true;
  }
  remove(id){const e=this.peers.get(id);if(e){e.pc.close();this.peers.delete(id);this.onStream(id,null);}}
