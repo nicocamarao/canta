@@ -11,6 +11,8 @@ assert.equal((await state()).phase,'choosing','test only in idle B');
 assert.equal((await rpc(a,'live_members')).data.some(p=>p.roomId===room),false,'test only in empty B');
 let timer;
 try{
+ const sweep=await rpc(a,'room_sweep');assert.equal(sweep.ok,true,JSON.stringify(sweep.data));
+ assert.equal((await enqueue(a,ca)).ok,false,'expired client must not receive false success');
  await pulse(a,ca);await pulse(b,cb);
  timer=setInterval(()=>Promise.all([pulse(a,ca),pulse(b,cb)]),1500);
  assert.equal((await enqueue(a,ca)).ok,true);await enqueue(b,cb);
