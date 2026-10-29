@@ -55,7 +55,7 @@ end $$;
 create or replace function public.begin_song(room text,client text) returns void language plpgsql security definer set search_path=public as $$
 begin
  update rooms set phase='playing',playing=true,position=0,updated_at=now()+interval '5 seconds',started_at=null,
- ends_at=now()+interval '20 seconds',ready_until=null
+ ends_at=now()+interval '3 minutes',ready_until=null
  where id=room and host_id=auth.uid() and singer_client=client and phase='ready' and ready_until>now()
  and exists(select 1 from room_sessions where client_id=client and user_id=auth.uid() and room_id=room and last_seen_at>now()-interval '12 seconds');
  if not found then raise exception 'El turno venció o no estás en la sala.';end if;
@@ -63,7 +63,7 @@ end $$;
 create or replace function public.confirm_song_started(room text,client text,at_position double precision) returns void language plpgsql security definer set search_path=public as $$
 begin
  update rooms set started_at=now()-make_interval(secs=>greatest(0,least(coalesce(at_position,0),10))),ends_at=now()+make_interval(secs=>duration+3-greatest(0,least(coalesce(at_position,0),10)))
- where id=room and host_id=auth.uid() and singer_client=client and phase='playing' and started_at is null and updated_at<=now() and ends_at>now();
+ where id=room and host_id=auth.uid() and singer_client=client and phase='playing' and started_at is null and updated_at<=now() and ends_at>now() and at_position>=0.5;
 end $$;
 create or replace function public.finish_song(room text,client text) returns void language plpgsql security definer set search_path=public as $$
 begin

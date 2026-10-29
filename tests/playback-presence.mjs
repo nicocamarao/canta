@@ -19,7 +19,7 @@ try{
  assert.equal((await rpc(b,'begin_song',{room,client:cb})).ok,false);
  await rpc(a,'begin_song',{room,client:ca});let s=await state();assert.ok(Date.parse(s.updated_at)-Date.now()>3500);assert.equal(s.started_at,null);
  await rpc(b,'confirm_song_started',{room,client:cb,at_position:0});assert.equal((await state()).started_at,null);
- await new Promise(r=>setTimeout(r,5300));await rpc(a,'confirm_song_started',{room,client:ca,at_position:.1});assert.ok((await state()).started_at);
+ await new Promise(r=>setTimeout(r,5300));await rpc(a,'confirm_song_started',{room,client:ca,at_position:.1});assert.equal((await state()).started_at,null,'ads and preroll do not start the song clock');await rpc(a,'confirm_song_started',{room,client:ca,at_position:.6});assert.ok((await state()).started_at);
  await rpc(b,'finish_song',{room,client:cb});assert.equal((await state()).singer_client,ca);
  await rpc(a,'finish_song',{room,client:ca});assert.equal((await state()).singer_client,cb);assert.equal((await state()).phase,'ready');
  await enqueue(b,cb);await rpc(b,'leave_room',{room,client:cb});assert.equal((await state()).phase,'choosing');assert.equal((await call(a,'song_queue?room_id=eq.B')).data.length,0);
