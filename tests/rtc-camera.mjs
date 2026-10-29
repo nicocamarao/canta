@@ -5,7 +5,7 @@ const track={stop(){}};
 let calls=0;
 Object.defineProperty(globalThis,'navigator',{value:{mediaDevices:{getUserMedia:async constraints=>{
  calls++;
- assert.equal(constraints.video,true);
+ assert.deepEqual(constraints,{video:{width:640,height:360},audio:false});
  return {getTracks:()=>[track]};
 }}}});
 
@@ -15,4 +15,4 @@ assert.equal(await room.toggle('video'),true);
 assert.equal(room.local.video,track);
 assert.ok(room.localStreams.video,'the complete MediaStream must remain referenced on mobile');
 assert.equal(calls,1);
-console.log('PASS: mobile camera uses one unrestricted request, keeps its stream, and ignores stale peer senders');
+console.log('PASS: mobile camera uses the original 640x360 request and ignores stale peer senders');
