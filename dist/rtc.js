@@ -4,7 +4,7 @@ export class VoiceRoom {
   if(this.peers.has(id)||id===this.id)return;
   const pc=new RTCPeerConnection({iceServers:this.iceServers});
   const entry={pc,candidates:[],stream:new MediaStream(),audio:pc.addTransceiver('audio',{direction:'sendrecv'}),video:pc.addTransceiver('video',{direction:'sendrecv'})};
-  this.peers.set(id,entry);
+  this.peers.set(id,entry);this.onStream(id,entry.stream);
   for(const kind of ['audio','video'])if(this.local[kind])await entry[kind].sender.replaceTrack(this.local[kind]);
   pc.onicecandidate=e=>{if(e.candidate)this.send(id,{candidate:e.candidate.toJSON()});};
   pc.ontrack=e=>{entry.stream.addTrack(e.track);this.onStream(id,entry.stream);};
