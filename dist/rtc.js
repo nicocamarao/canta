@@ -1,5 +1,5 @@
 export class VoiceRoom {
- constructor({id,send,iceServers,onStream,onStatus}) {Object.assign(this,{id,send,iceServers,onStream,onStatus});this.peers=new Map();this.local={audio:null,video:null};}
+ constructor({id,send,iceServers,onStream,onStatus}) {Object.assign(this,{id,send,iceServers,onStream,onStatus});this.peers=new Map();this.local={audio:null,video:null};this.localStreams={audio:null,video:null};}
  async connect(id) {
   if(this.peers.has(id)||id===this.id)return;
   const pc=new RTCPeerConnection({iceServers:this.iceServers});
@@ -20,10 +20,10 @@ export class VoiceRoom {
   if(data.candidate){if(e.pc.remoteDescription)await e.pc.addIceCandidate(data.candidate);else e.candidates.push(data.candidate);}
  }
  async toggle(kind) {
-  if(this.local[kind]){const old=this.local[kind];this.local[kind]=null;for(const e of this.peers.values())if(e[kind])await e[kind].sender.replaceTrack(null);old.stop();return false;}
+  if(this.local[kind]){const old=this.local[kind];this.local[kind]=null;this.localStreams[kind]=null;for(const e of this.peers.values())if(e[kind])await e[kind].sender.replaceTrack(null);old.stop();return false;}
   const stream=await navigator.mediaDevices.getUserMedia(kind==='audio'?{audio:{echoCancellation:true,noiseSuppression:true},video:false}:{video:{width:640,height:360},audio:false});
-  this.local[kind]=stream.getTracks()[0];for(const e of this.peers.values())if(e[kind])await e[kind].sender.replaceTrack(this.local[kind]);return true;
+  this.localStreams[kind]=stream;this.local[kind]=stream.getTracks()[0];for(const e of this.peers.values())if(e[kind])await e[kind].sender.replaceTrack(this.local[kind]);return true;
  }
  remove(id){const e=this.peers.get(id);if(e){e.pc.close();this.peers.delete(id);this.onStream(id,null);}}
- close(){for(const id of this.peers.keys())this.remove(id);for(const t of Object.values(this.local))t?.stop();this.local={audio:null,video:null};}
+ close(){for(const id of this.peers.keys())this.remove(id);for(const t of Object.values(this.local))t?.stop();this.local={audio:null,video:null};this.localStreams={audio:null,video:null};}
 }
