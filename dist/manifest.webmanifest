@@ -1,0 +1,10 @@
+{
+  "name": "Canta · Karaoke con amigos",
+  "short_name": "Canta",
+  "start_url": "/canta/",
+  "scope": "/canta/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#150a20",
+  "theme_color": "#12091d"
+}
