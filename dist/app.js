@@ -1,7 +1,7 @@
 import { ROOM_IDS, randomName } from './room-model.mjs';
 import { config } from './config.js';
 import { VoiceRoom } from './rtc.js?v=negotiation-2';
-import { playbackTarget, shouldStart } from './playback-clock.mjs?v=1';
+import { playbackTarget, shouldStart } from './playback-clock.mjs?v=2';
 import { RoomAudio } from './room-audio.mjs?v=1';
 const roomAudio=new RoomAudio();
 const $=id=>document.getElementById(id), id=sessionStorage.getItem('canta:client')||crypto.randomUUID();sessionStorage.setItem('canta:client',id);
@@ -94,11 +94,11 @@ function syncPlayer(){if(!selected)return;if(selected==='D'){if(player)destroyPl
  if(playbackKey!==key){playbackKey=key;loaded=r.video_id;player.cueVideoById({videoId:loaded,startSeconds:resumeTarget(r)});return;}
  $('player-empty').hidden=true;
  if(shouldStart(r,now(),host())){
-  if(!host()&&Math.abs(player.getCurrentTime()-target(r))>0.3)player.seekTo(target(r),true);
+  if(r.started_at&&Math.abs(player.getCurrentTime()-target(r))>0.3)player.seekTo(target(r),true);
   const state=player.getPlayerState();if(![1,3].includes(state))player.playVideo();else if(state===1&&host()&&!r.started_at)confirmStart();
  }else if(player.getPlayerState()===1)player.pauseVideo();
 }
-function createPlayer(r){playerLoadAt=Date.now();loaded=r.video_id;playbackKey=r.video_id+':'+r.singer_client+':'+r.updated_at;$('player-empty').hidden=true;const frame=el('iframe','');frame.id='player';frame.title='Reproductor de karaoke';frame.allow='autoplay; encrypted-media; picture-in-picture';frame.referrerPolicy='strict-origin-when-cross-origin';frame.src='https://www.youtube-nocookie.com/embed/'+r.video_id+'?'+new URLSearchParams({enablejsapi:'1',playsinline:'1',origin:location.origin,start:String(Math.floor(resumeTarget(r))),autoplay:'0'});$('player').replaceWith(frame);player=new YT.Player('player',{events:{onReady:()=>{playerReady=true;turnClock();syncPlayer();},onStateChange:e=>{if(e.data===1)confirmStart();if(e.data===0&&host()&&states[selected]?.phase==='playing'&&states[selected]?.started_at)client.rpc('finish_song',{room:selected,client:id}).then(refresh);},onError:()=>feedback('YouTube no permite reproducir este video. Podés parar la canción.'),onAutoplayBlocked:()=>{$('enable-audio').hidden=false;}}});}
+function createPlayer(r){playerLoadAt=Date.now();loaded=r.video_id;playbackKey=r.video_id+':'+r.singer_client+':'+r.updated_at;$('player-empty').hidden=true;const frame=el('iframe','');frame.id='player';frame.title='Reproductor de karaoke';frame.allow='autoplay; encrypted-media; picture-in-picture';frame.referrerPolicy='strict-origin-when-cross-origin';frame.src='https://www.youtube-nocookie.com/embed/'+r.video_id+'?'+new URLSearchParams({enablejsapi:'1',playsinline:'1',origin:location.origin,start:String(Math.floor(resumeTarget(r))),autoplay:'0',controls:'0',disablekb:'1',fs:'0'});$('player').replaceWith(frame);player=new YT.Player('player',{events:{onReady:()=>{playerReady=true;turnClock();syncPlayer();},onStateChange:e=>{if(e.data===1)confirmStart();if(e.data===0&&host()&&states[selected]?.phase==='playing'&&states[selected]?.started_at)client.rpc('finish_song',{room:selected,client:id}).then(refresh);},onError:()=>feedback('YouTube no permite reproducir este video. Podés parar la canción.'),onAutoplayBlocked:()=>{$('enable-audio').hidden=false;}}});}
 window.onYouTubeIframeAPIReady=()=>{apiReady=true;syncPlayer();};
 const script=document.createElement('script');script.src='https://www.youtube.com/iframe_api';document.head.append(script);
 $('leave').onclick=()=>leave().catch(e=>feedback(e.message));$('home').onclick=e=>{e.preventDefault();leave().catch(e=>feedback(e.message));};

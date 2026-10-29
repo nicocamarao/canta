@@ -1,4 +1,4 @@
-export const SPECTATOR_DELAY_MS=500;
+export const SPECTATOR_DELAY_MS=300;
 export function playbackTarget(room,serverNow,isSinger){
  if(room.phase!=='playing'||!room.started_at)return 0;
  return Math.max(0,(serverNow-Date.parse(room.started_at)-(isSinger?0:SPECTATOR_DELAY_MS))/1000);
