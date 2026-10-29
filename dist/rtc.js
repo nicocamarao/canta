@@ -24,10 +24,7 @@ export class VoiceRoom {
   this.local[kind]=null;this.localStreams[kind]=null;
   let stream;
   if(kind==='audio')stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
-  else{
-   try{stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:360},audio:false});}
-   catch(error){if(['NotAllowedError','SecurityError'].includes(error?.name))throw error;await new Promise(resolve=>setTimeout(resolve,300));try{stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});}catch(retryError){if(['NotAllowedError','SecurityError'].includes(retryError?.name))throw retryError;await new Promise(resolve=>setTimeout(resolve,700));stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});}}
-  }
+  else stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});
   this.localStreams[kind]=stream;this.local[kind]=stream.getTracks()[0];if(!this.local[kind]||this.local[kind].readyState==='ended')throw new Error('No se recibió una pista de '+kind);this.local[kind].enabled=true;await Promise.allSettled([...this.peers.values()].filter(e=>e[kind]).map(e=>e[kind].sender.replaceTrack(this.local[kind])));return true;
  }
  remove(id){const e=this.peers.get(id);if(e){e.pc.close();this.peers.delete(id);this.onStream(id,null);}}
