@@ -4,7 +4,8 @@ import { VoiceRoom } from './rtc.js?v=negotiation-2';
 import { RoomAudio } from './room-audio.mjs?v=1';
 const roomAudio=new RoomAudio();
 const $=id=>document.getElementById(id), id=sessionStorage.getItem('canta:client')||crypto.randomUUID();sessionStorage.setItem('canta:client',id);
-const name=sessionStorage.getItem('canta:name')||randomName();sessionStorage.setItem('canta:name',name);
+const syntheticTest=new URLSearchParams(location.search).get('prueba')==='1';
+const name=syntheticTest?'Prueba Codex':sessionStorage.getItem('canta:name')||randomName();sessionStorage.setItem('canta:name',name);
 let client,lobby,uid,selected=null,states={},members=[],voice,ready=false,online=false,player,playerReady=false,apiReady=false,loaded=null,offset=0,suppressUntil=0,busy=false;
 const chatByRoom={A:[],B:[],C:[],D:[]};
 function panel(which){$('chat-panel').hidden=which!=='chat';$('search-panel').hidden=which!=='search';$('tab-chat').setAttribute('aria-pressed',String(which==='chat'));$('tab-search').setAttribute('aria-pressed',String(which==='search'));}
@@ -96,3 +97,17 @@ async function start(){render();if(!config.supabaseUrl||!config.supabaseKey){$('
 
  }catch(e){$('connection').textContent='No se pudo conectar: '+e.message;}}
 window.addEventListener('pagehide',()=>{voice?.close();lobby?.untrack();});start();
+
+if(syntheticTest){
+ const controls=el('div',''),run=el('button','','Iniciar prueba sintética en D'),stop=el('button','','Detener prueba');controls.append(run,stop);controls.style.cssText='position:fixed;top:0;right:0;z-index:100;background:#19231e;padding:6px';document.body.append(controls);
+ let testContext,testTimer,testOsc;
+ const cleanup=()=>{clearInterval(testTimer);testOsc?.stop();testOsc=null;testContext?.close();testContext=null;};
+ stop.onclick=()=>{cleanup();leave();run.disabled=false;};
+ run.onclick=async()=>{if(!online){feedback('Esperando conexión a las salas.');return;}run.disabled=true;try{
+ testContext=new AudioContext();await testContext.resume();const destination=testContext.createMediaStreamDestination(),gain=testContext.createGain();gain.gain.value=0;testOsc=testContext.createOscillator();testOsc.frequency.value=440;testOsc.connect(gain);gain.connect(destination);testOsc.start();
+ const canvas=document.createElement('canvas');canvas.width=480;canvas.height=270;const drawing=canvas.getContext('2d');let tick=0;
+ testTimer=setInterval(()=>{tick++;drawing.fillStyle='#193a2a';drawing.fillRect(0,0,480,270);drawing.fillStyle='#d9f99c';drawing.font='bold 32px sans-serif';drawing.fillText('PRUEBA CODEX',70,80);drawing.font='24px sans-serif';drawing.fillText('Video sintético · '+(tick/10).toFixed(1)+' s',65,140);drawing.beginPath();drawing.arc(40+(tick*8)%400,210,18,0,Math.PI*2);drawing.fill();if(tick%20===0){const t=testContext.currentTime;gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(.08,t+.02);gain.gain.linearRampToValueAtTime(0,t+.22);}},100);
+ const video=canvas.captureStream(10).getVideoTracks()[0],audio=destination.stream.getAudioTracks()[0];roomAudio.unlock().catch(()=>{});await join('D');voice.local={audio,video};for(const peer of voice.peers.values())for(const kind of ['audio','video'])if(peer[kind])await peer[kind].sender.replaceTrack(voice.local[kind]);updateMic();$('cam').textContent='▣ Cámara encendida';$('cam').setAttribute('aria-pressed','true');await track();render();feedback('Prueba sintética: imagen animada y tono breve cada 2 segundos.');
+ }catch(e){cleanup();run.disabled=false;feedback('Error de prueba: '+e.message);}};
+ window.addEventListener('pagehide',cleanup);
+}
