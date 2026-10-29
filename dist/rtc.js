@@ -20,12 +20,13 @@ export class VoiceRoom {
   if(data.candidate){if(e.pc.remoteDescription)await e.pc.addIceCandidate(data.candidate);else e.candidates.push(data.candidate);}
  }
  async toggle(kind) {
-  if(this.local[kind]){const old=this.local[kind];this.local[kind]=null;for(const e of this.peers.values())if(e[kind])await e[kind].sender.replaceTrack(null);old.stop();return false;}
+  if(this.local[kind]&&this.local[kind].readyState!=='ended'){const old=this.local[kind];this.local[kind]=null;for(const e of this.peers.values())if(e[kind])await e[kind].sender.replaceTrack(null);old.stop();return false;}
+  this.local[kind]=null;
   let stream;
   if(kind==='audio')stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
   else{
    try{stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:360},audio:false});}
-   catch(error){if(!['OverconstrainedError','NotFoundError','TypeError'].includes(error?.name))throw error;stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});}
+   catch(error){if(['NotAllowedError','SecurityError'].includes(error?.name))throw error;await new Promise(resolve=>setTimeout(resolve,300));try{stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});}catch(retryError){if(['NotAllowedError','SecurityError'].includes(retryError?.name))throw retryError;await new Promise(resolve=>setTimeout(resolve,700));stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});}}
   }
   this.local[kind]=stream.getTracks()[0];if(!this.local[kind]||this.local[kind].readyState==='ended')throw new Error('No se recibió una pista de '+kind);this.local[kind].enabled=true;for(const e of this.peers.values())if(e[kind])await e[kind].sender.replaceTrack(this.local[kind]);return true;
  }
