@@ -14,7 +14,8 @@ const roomChat=room=>chatByRoom[room]||(chatByRoom[room]=[]);
 function panel(which){if(selected==='D')which='chat';$('chat-panel').hidden=false;$('search-panel').hidden=which!=='search';$('tab-chat').setAttribute('aria-pressed',String(which!=='search'));$('tab-search').setAttribute('aria-pressed',String(which==='search'));}
 $('tab-chat').onclick=()=>panel('chat');$('tab-search').onclick=()=>panel($('search-panel').hidden?'search':'chat');$('pick-song').onclick=()=>{panel('search');$('query').focus();};
 $('search-close').onclick=$('search-cancel').onclick=()=>panel('chat');
-const feedback=message=>{$('feedback').textContent=message;};
+let feedbackTimer;
+const feedback=(message,duration=6000)=>{clearTimeout(feedbackTimer);$('feedback').textContent=message;if(message)feedbackTimer=setTimeout(()=>{if($('feedback').textContent===message)$('feedback').textContent='';},duration);};
 const el=(tag,cls,text)=>{const n=document.createElement(tag);n.className=cls;if(text!==undefined)n.textContent=text;return n;};
 function setAvatar(node,personName,personPhoto){node.textContent=personPhoto?'':personName.slice(0,1).toUpperCase();node.style.backgroundImage=personPhoto?`url("${personPhoto}")`:'';node.classList.toggle('has-photo',!!personPhoto);}
 function avatar(personName,personPhoto){const node=el('div','avatar');setAvatar(node,personName,personPhoto);return node;}
