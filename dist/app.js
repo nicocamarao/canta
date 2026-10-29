@@ -1,6 +1,8 @@
 import { ROOM_IDS, randomName } from './room-model.mjs';
 import { config } from './config.js';
 import { VoiceRoom } from './rtc.js';
+import { RoomAudio } from './room-audio.mjs?v=1';
+const roomAudio=new RoomAudio();
 const $=id=>document.getElementById(id), id=sessionStorage.getItem('canta:client')||crypto.randomUUID();sessionStorage.setItem('canta:client',id);
 const name=sessionStorage.getItem('canta:name')||randomName();sessionStorage.setItem('canta:name',name);
 let client,lobby,uid,selected=null,states={},members=[],voice,ready=false,online=false,player,playerReady=false,apiReady=false,loaded=null,offset=0,suppressUntil=0,busy=false;
@@ -21,7 +23,7 @@ function render(){
   const list=el('div','people');if(!people.length)list.append(el('span','empty','Todavía no hay nadie. Sé el primero.'));
   people.forEach(p=>list.append(el('span','person',p.name+(p.id===id?' · vos':''))));
   const song=el('div','song'),label=el('div','');label.append(el('small','',state?.phase==='playing'?'CANTANDO':state?.phase==='ready'?'PRÓXIMO TURNO':'ESTADO'),el('p','',state?.phase==='choosing'?'Escogiendo':state?.title||'Escogiendo'));song.append(el('span','song-icon',state?.video_id?'♫':'◌'),label);
-  const enter=el('button','enter',selected===room?'Estás en esta sala':'Entrar a la sala ↗');enter.disabled=!online;enter.onclick=()=>join(room).catch(e=>feedback(e.message));
+  const enter=el('button','enter',selected===room?'Estás en esta sala':'Entrar a la sala ↗');enter.disabled=!online;enter.onclick=()=>{roomAudio.unlock().catch(()=>{});join(room).catch(e=>feedback(e.message));};
   card.append(top,el('h2','',`Sala ${room}`),list,song,enter);return card;
  }));
  $('session').hidden=!selected;
@@ -48,22 +50,24 @@ function presence(){members=Object.values(lobby.presenceState()).flat();render()
  for(const peer of voice.peers.keys())if(!peers.some(p=>p.id===peer))voice.remove(peer);
  for(const p of peers){const node=document.getElementById('media-'+p.id);if(node){node.querySelector('p').textContent=p.name+(p.mic?' · ♩':'');node.querySelector('video').hidden=!p.cam;node.querySelector('.avatar').hidden=!!p.cam;}}
 }
-function remoteStream(peer,stream){let box=document.getElementById('media-'+peer);if(!stream){box?.remove();return;}if(!box){box=el('div','participant');box.id='media-'+peer;const v=el('video','');v.autoplay=true;v.playsInline=true;const pname=members.find(p=>p.id===peer)?.name||'Participante';v.hidden=!members.find(p=>p.id===peer)?.cam;box.append(el('div','avatar',pname.slice(0,1)),v,el('p','',pname),el('small','','Conectando…'));$('people-video').append(box);}const v=box.querySelector('video');v.srcObject=stream;if(stream.getTracks().length)v.play().catch(()=>feedback('Pulsá “Sonido” para escuchar a tus amigos.'));}
+function remoteStream(peer,stream){let box=document.getElementById('media-'+peer);if(!stream){roomAudio.remove(peer);box?.remove();return;}if(!box){box=el('div','participant');box.id='media-'+peer;const v=el('video','');v.autoplay=true;v.playsInline=true;v.muted=true;const pname=members.find(p=>p.id===peer)?.name||'Participante';v.hidden=!members.find(p=>p.id===peer)?.cam;box.append(el('div','avatar',pname.slice(0,1)),v,el('p','',pname),el('small','','Conectando…'));$('people-video').append(box);}const v=box.querySelector('video');if(v.srcObject!==stream)v.srcObject=stream;if(stream.getVideoTracks().length)v.play().catch(()=>{});roomAudio.add(peer,stream);updateAudioPrompt();}
+function updateAudioPrompt(){ $('enable-audio').hidden=!selected||!roomAudio.blocked; }
+
 function renderChat(){if(!selected)return;const box=$('messages');const nearBottom=box.scrollHeight-box.scrollTop-box.clientHeight<70;box.replaceChildren(...chatByRoom[selected].map(m=>{const row=el('div','message');row.append(el('strong','',m.name),el('p','',m.text));return row;}));box.scrollTop=box.scrollHeight;}
 $('chat-form').onsubmit=async e=>{e.preventDefault();const text=$('chat-input').value.trim();if(!text||!online||!selected)return;const message={id:crypto.randomUUID(),room:selected,name,text:text.slice(0,500),sender:id};const result=await lobby.send({type:'broadcast',event:'chat',payload:message});if(result==='ok'){chatByRoom[selected].push(message);chatByRoom[selected]=chatByRoom[selected].slice(-100);$('chat-input').value='';renderChat();}else feedback('No se pudo enviar el mensaje. Intentá de nuevo.');};
 async function join(room){if(selected===room)return;await leave();selected=room;
  voice=new VoiceRoom({id,iceServers:config.iceServers,send:(to,data)=>lobby.send({type:'broadcast',event:'signal',payload:{from:id,to,room:selected,data}}),onStream:remoteStream,onStatus:(peer,status)=>{const n=document.getElementById('media-'+peer)?.querySelector('small');if(n)n.textContent=status==='connected'?'Voz conectada':status==='failed'?'Sin conexión':status==='connecting'?'Conectando…':status==='disconnected'?'Reconectando…':status;}});
- lastMutedTurn=null;await client.rpc('advance_room',{room});
+ lastMutedTurn=null;updateAudioPrompt();await client.rpc('advance_room',{room});
  await track();await refresh();presence();renderChat();panel('chat');location.hash=room;$('session').scrollIntoView({behavior:'smooth'});
 }
-async function leave(){voice?.close();voice=null;selected=null;loaded=null;history.replaceState(null,'',location.pathname);$('feedback').textContent='';player?.destroy?.();player=null;playerReady=false;if(!$('player'))$('player-shell').prepend(el('div',''));if(!$('player'))$('player-shell').firstElementChild.id='player';$('player-empty').hidden=false;$('people-video').replaceChildren();for(const [button,label]of [['mic','♩ Mic'],['cam','▣ Cámara']]){$(button).textContent=label+(button==='cam'?' apagada':' apagado');$(button).setAttribute('aria-pressed','false');}render();await track();}
+async function leave(){roomAudio.clear();voice?.close();voice=null;selected=null;$('enable-audio').hidden=true;loaded=null;history.replaceState(null,'',location.pathname);$('feedback').textContent='';player?.destroy?.();player=null;playerReady=false;if(!$('player'))$('player-shell').prepend(el('div',''));if(!$('player'))$('player-shell').firstElementChild.id='player';$('player-empty').hidden=false;$('people-video').replaceChildren();for(const [button,label]of [['mic','♩ Mic'],['cam','▣ Cámara']]){$(button).textContent=label+(button==='cam'?' apagada':' apagado');$(button).setAttribute('aria-pressed','false');}render();await track();}
 function destroyPlayer(){player?.destroy?.();player=null;playerReady=false;loaded=null;if(!$('player')){const n=el('div','');n.id='player';$('player-shell').prepend(n);}$('player-empty').hidden=false;}
 function syncPlayer(){if(!selected)return;const r=states[selected];if(!r?.video_id||r.phase==='choosing'){if(player)destroyPlayer();return;}if(!player&&apiReady){createPlayer(r);return;}if(!playerReady)return;const t=target(r),shouldPlay=r.phase==='playing'&&now()>=Date.parse(r.updated_at);$('player-empty').hidden=true;
  if(loaded!==r.video_id){loaded=r.video_id;player.cueVideoById({videoId:loaded,startSeconds:t});return;}
  if(shouldPlay){if(Math.abs(player.getCurrentTime()-t)>0.8)player.seekTo(t,true);if(player.getPlayerState()!==1)player.playVideo();}
  else if(player.getPlayerState()===1)player.pauseVideo();
 }
-function createPlayer(r){loaded=r.video_id;$('player-empty').hidden=true;player=new YT.Player('player',{height:'360',width:'640',videoId:r.video_id,playerVars:{playsinline:1,origin:location.origin,start:Math.floor(target(r)),autoplay:0},events:{onReady:()=>{playerReady=true;syncPlayer();},onStateChange:e=>{if(e.data===0&&host()&&states[selected]?.phase==='playing'&&now()>Date.parse(states[selected].updated_at)+1000)client.rpc('finish_song',{room:selected,client:id}).then(refresh);},onError:()=>feedback('YouTube no permite reproducir este video. El turno avanzará al finalizar su tiempo.'),onAutoplayBlocked:()=>feedback('Pulsá “Sonido” para escuchar la canción.')}});}
+function createPlayer(r){loaded=r.video_id;$('player-empty').hidden=true;player=new YT.Player('player',{height:'360',width:'640',videoId:r.video_id,playerVars:{playsinline:1,origin:location.origin,start:Math.floor(target(r)),autoplay:0},events:{onReady:()=>{playerReady=true;syncPlayer();},onStateChange:e=>{if(e.data===0&&host()&&states[selected]?.phase==='playing'&&now()>Date.parse(states[selected].updated_at)+1000)client.rpc('finish_song',{room:selected,client:id}).then(refresh);},onError:()=>feedback('YouTube no permite reproducir este video. El turno avanzará al finalizar su tiempo.'),onAutoplayBlocked:()=>{$('enable-audio').hidden=false;}}});}
 window.onYouTubeIframeAPIReady=()=>{apiReady=true;syncPlayer();};
 const script=document.createElement('script');script.src='https://www.youtube.com/iframe_api';document.head.append(script);
 $('leave').onclick=()=>leave().catch(e=>feedback(e.message));$('home').onclick=e=>{e.preventDefault();leave().catch(e=>feedback(e.message));};
@@ -71,7 +75,7 @@ async function toggleMic(){if(!voice)return;$('mic').disabled=true;try{await voi
 $('mic').onclick=()=>{if(!voice)return;if(!voice.local.audio&&states[selected]?.phase==='playing'&&!host())$('echo-dialog').showModal();else toggleMic();};
 $('echo-cancel').onclick=()=>$('echo-dialog').close();$('echo-accept').onclick=()=>{$('echo-dialog').close();player?.setVolume?.(20);toggleMic();};
 $('cam').onclick=async()=>{if(!voice)return;$('cam').disabled=true;try{const active=await voice.toggle('video');$('cam').textContent=active?'▣ Cámara encendida':'▣ Cámara apagada';$('cam').setAttribute('aria-pressed',String(active));await track();render();}catch{feedback('Revisá el permiso de cámara del navegador.');}finally{$('cam').disabled=false;}};
-$('listen').onclick=()=>{document.querySelectorAll('video').forEach(v=>v.play().catch(()=>{}));syncPlayer();};
+$('enable-audio').onclick=()=>{const pending=roomAudio.unlock();syncPlayer();pending.then(()=>{updateAudioPrompt();feedback('');}).catch(()=>feedback('El navegador bloqueó el audio. Tocá nuevamente para habilitarlo.'));};
 $('begin').onclick=async()=>{if(!host()||!voice)return;const room=selected;$('begin').disabled=true;try{if(!voice.local.audio){await voice.toggle('audio');updateMic();await track();}if(selected!==room)return;const {error}=await client.rpc('begin_song',{room,client:id});if(error)throw error;await refresh();}catch(e){feedback(e.message||'No se pudo comenzar. Revisá el micrófono.');}finally{turnClock();}};
 $('share').onclick=async()=>{try{await navigator.clipboard.writeText(location.href);feedback('Enlace copiado. Compartilo con tu amigo.');}catch{feedback('Compartí este enlace: '+location.href);}};
 function quotaDay(){return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}

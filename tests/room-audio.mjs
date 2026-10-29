@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {RoomAudio} from '../dist/room-audio.mjs';
+globalThis.MediaStream=class {constructor(tracks){this.tracks=tracks;}};
+let connected=0,disconnected=0;
+const context={state:'suspended',destination:{},resume(){this.state='running';return Promise.resolve();},createMediaStreamSource(stream){assert.equal(stream.tracks.length,1);return{connect(){connected++;},disconnect(){disconnected++;}};}};
+const output=new RoomAudio(()=>context);
+assert.equal(output.blocked,true);await output.unlock();assert.equal(output.blocked,false);
+const stream={getAudioTracks:()=>[{id:'voice',readyState:'live'}]};
+output.add('singer',stream);output.add('singer',stream);
+assert.equal(connected,1,'presence or camera changes must not reconnect voice');
+output.add('second',stream);output.remove('singer');assert.equal(disconnected,1);
+output.clear();assert.equal(disconnected,2);assert.equal(output.sources.size,0,'lobby must be silent');
+console.log('PASS: voice output independent of camera, no duplicate audio, silent lobby');
