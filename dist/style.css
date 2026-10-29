@@ -509,3 +509,25 @@ html.room-route-pending body:before{content:'Volviendo a la sala…';position:fi
  body:has(#session:not([hidden])) .call-bar button{min-height:50px!important}
  body:has(#session:not([hidden])) .reaction-buttons button{font-size:21px!important}
 }
+@media(max-width:560px){
+ body:has(#session:not([hidden])) main{padding-bottom:max(52px,env(safe-area-inset-bottom))!important}
+ .room-layout{grid-template-rows:minmax(330px,.85fr) minmax(280px,1.15fr)!important}
+ .stage-column{grid-template-columns:68px minmax(0,1fr) 76px!important;grid-template-rows:minmax(0,1fr) 94px!important}
+ .singer-panel,.people-panel{padding:4px!important}
+ #singer-video,#people-video{gap:3px!important;padding-top:3px!important}
+ #singer-video .participant,#people-video .participant{padding:3px!important}
+ #singer-video .participant .avatar,#people-video .participant .avatar{width:28px;height:28px;font-size:14px!important}
+ #singer-video .participant p,#people-video .participant p{margin:2px 0!important;font-size:12px!important;line-height:1.15!important}
+ #singer-video .participant video,#people-video .participant video{max-height:64px!important}
+ .queue-panel{padding:4px 6px!important}
+ #song-queue{min-height:62px!important}
+ .queue-item{padding:3px 0!important}.queue-item strong{font-size:13px!important}.queue-item small{font-size:11px!important}
+ .panel-tabs button{min-height:36px!important;padding:3px 6px!important;font-size:14px!important}
+ #chat-panel{padding:4px 6px!important}
+ #chat-form{position:relative;z-index:3;order:-1;flex:none!important;margin-bottom:4px}
+ #chat-form input{min-height:38px!important;font-size:16px!important}
+ #chat-form button{min-width:42px!important;min-height:38px!important;padding:4px!important}
+ .call-bar{gap:3px!important;margin:3px!important;padding:3px!important}
+ body:has(#session:not([hidden])) .call-bar button{min-height:44px!important;padding:3px!important;font-size:14px!important}
+ body:has(#session:not([hidden])) .reaction-buttons button{font-size:20px!important}
+}
