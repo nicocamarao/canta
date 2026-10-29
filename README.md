@@ -6,11 +6,16 @@ Karaoke social en HTML/CSS/JavaScript, publicado en GitHub Pages.
 - Búsqueda de YouTube: solo títulos que contengan la palabra karaoke.
 - Video sincronizado con reloj del servidor y estado persistente en Postgres.
 - Voz y cámara WebRTC, apagados inicialmente y detenidos al salir.
+- Perfil editable con nombre y foto, persistente en el dispositivo y visible para las personas conectadas.
+- Sala D dedicada a chat con video, sin canciones.
+- Salas permanentes con nombre propio creadas por usuarios; las salas A–D permanecen fijas y las demás se ordenan por ocupación.
 - La clave de YouTube es pública por diseño y está restringida al dominio y API.
 - Al responder Google quotaExceeded/dailyLimitExceeded, se detienen las búsquedas hasta el siguiente día de cuota (hora del Pacífico).
 
 ## Configuración
-Ejecutar `supabase/setup.sql` y después `supabase/queue.sql`, habilitar Anonymous Sign-ins y completar las claves públicas de `dist/config.js`. Nunca usar claves secret/service_role en el frontend. El dominio permitido de la clave YouTube debe ser `https://nicocamarao.github.io/*`.
+Ejecutar `supabase/setup.sql`, `supabase/queue.sql`, las migraciones de presencia, `supabase/custom-rooms.sql` y finalmente `supabase/chat-room-d.sql`; habilitar Anonymous Sign-ins y completar las claves públicas de `dist/config.js`. Nunca usar claves secret/service_role en el frontend. El dominio permitido de la clave YouTube debe ser `https://nicocamarao.github.io/*`.
+
+El perfil y la sesión anónima se conservan en `localStorage` hasta que la persona borre los datos del sitio. No se usan cookies con vencimiento.
 
 ## Conexión de voz
 Se utiliza WebRTC entre pares con STUN. Algunas redes necesitan TURN; configurar `iceServers` con credenciales temporales emitidas por un backend para cubrir esos casos. No se promete audio musical perfectamente sincronizado: cada receptor tiene latencia de red y reproducción distinta. Usar auriculares.
