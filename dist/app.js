@@ -12,7 +12,7 @@ function panel(which){$('chat-panel').hidden=which!=='chat';$('search-panel').hi
 $('tab-chat').onclick=()=>panel('chat');$('tab-search').onclick=()=>panel('search');$('pick-song').onclick=()=>{panel('search');$('query').focus();};
 const feedback=message=>{$('feedback').textContent=message;};
 const el=(tag,cls,text)=>{const n=document.createElement(tag);n.className=cls;if(text!==undefined)n.textContent=text;return n;};
-const pendingSignals=[];let queue=[],lastMutedTurn=null,advancing=false;let queuePage=0;
+const pendingSignals=[];let queue=[],advancing=false;let queuePage=0;
 const host=()=>!!selected&&states[selected]?.host_id===uid&&states[selected]?.singer_client===id;
 const now=()=>Date.now()+offset;
 const target=r=>Math.max(0,r.position+(r.playing?(now()-Date.parse(r.updated_at))/1000:0));
@@ -31,7 +31,7 @@ function render(){
  if(selected){let self=$('self');if(!self){self=el('div','participant');self.id='self';const video=el('video','');video.muted=true;video.autoplay=true;video.playsInline=true;self.append(el('div','avatar',name.slice(0,1)),video,el('p','',name+' · vos'),el('small','',''));$('people-video').prepend(self);}self.querySelector('small').textContent=voice?.local.audio?'Mic encendido':'Mic apagado';const video=self.querySelector('video');video.hidden=!voice?.local.video;self.querySelector('.avatar').hidden=!!voice?.local.video;if(voice?.local.video&&!video.srcObject?.getTracks().includes(voice.local.video))video.srcObject=new MediaStream([voice.local.video]);}
 
  if(selected){$('room-title').textContent=`Sala ${selected}`;$('room-status').textContent=(states[selected]?.phase==='choosing'?'Escogiendo':states[selected]?.title||'Escogiendo');}
- $('people-count').textContent=`${members.filter(p=>p.roomId===selected).length} personas`;renderQueue();turnClock();muteForTurn();
+ $('people-count').textContent=`${members.filter(p=>p.roomId===selected).length} personas`;renderQueue();turnClock();
 }
 async function refresh(){const [{data,error},{data:songs,error:qe}]=await Promise.all([client.from('rooms').select('*'),client.from('song_queue').select('*').order('id')]);if(error||qe)throw(error||qe);states=Object.fromEntries(data.map(r=>[r.id,r]));queue=songs;render();syncPlayer();}
 function renderQueue(){if(!selected)return;const songs=queue.filter(s=>s.room_id===selected);queuePage=Math.min(queuePage,Math.max(0,Math.ceil(songs.length/2)-1));$('queue-count').textContent=`${songs.length} canciones`;$('song-queue').replaceChildren(...songs.slice(queuePage*2,queuePage*2+2).map((song,i)=>{const row=el('div','queue-item');const info=el('div','');info.append(el('strong','',song.title),el('small','',song.singer_name));row.append(el('span','queue-number',String(queuePage*2+i+1)),info);if(song.user_id===uid){const del=el('button','text-button','×');del.setAttribute('aria-label','Quitar '+song.title);del.onclick=async()=>{const {error}=await client.rpc('remove_queued_song',{song:song.id});if(error)feedback(error.message);await refresh();};row.append(del);}return row;}));if(songs.length>2){const nav=el('div','pages');for(const [label,delta]of [['←',-1],['→',1]]){const b=el('button','text-button',label);b.setAttribute('aria-label',delta<0?'Turnos anteriores':'Turnos siguientes');b.disabled=queuePage+delta<0||queuePage+delta>=Math.ceil(songs.length/2);b.onclick=()=>{queuePage+=delta;renderQueue();};nav.append(b);}$('song-queue').append(nav);}}
@@ -40,7 +40,6 @@ function turnClock(){if(!selected)return;const r=states[selected];$('begin').hid
  else if(r?.phase==='playing'){const left=Math.ceil((Date.parse(r.updated_at)-now())/1000);$('turn-status').textContent=left>0?`Preparate… ${left}`:`Cantando: ${r.singer_name}`;}
  else $('turn-status').textContent='Buscá una canción y sumala a la lista.';
 }
-async function muteForTurn(){const r=states[selected];if(!voice||r?.phase!=='playing')return;const key=r.video_id+':'+r.updated_at;if(lastMutedTurn===key)return;lastMutedTurn=key;if(!host()&&voice.local.audio){await voice.toggle('audio');updateMic();await track();feedback('Comenzó la canción: tu micrófono se silenció. Podés activarlo para hablar.');}}
 function updateMic(){const active=!!voice?.local.audio;$('mic').textContent=active?'♩ Mic encendido':'♩ Mic apagado';$('mic').setAttribute('aria-pressed',String(active));}
 async function clock(){const start=Date.now();const {data,error}=await client.rpc('server_time');if(!error)offset=Date.parse(data)-(start+Date.now())/2;}
 async function track(){if(online)await lobby.track({id,name,roomId:selected,mic:!!voice?.local.audio,cam:!!voice?.local.video});}
@@ -58,7 +57,7 @@ function renderChat(){if(!selected)return;const box=$('messages');const nearBott
 $('chat-form').onsubmit=async e=>{e.preventDefault();const text=$('chat-input').value.trim();if(!text||!online||!selected)return;const message={id:crypto.randomUUID(),room:selected,name,text:text.slice(0,500),sender:id};const result=await lobby.send({type:'broadcast',event:'chat',payload:message});if(result==='ok'){chatByRoom[selected].push(message);chatByRoom[selected]=chatByRoom[selected].slice(-100);$('chat-input').value='';renderChat();}else feedback('No se pudo enviar el mensaje. Intentá de nuevo.');};
 async function join(room){if(selected===room)return;await leave();selected=room;
  voice=new VoiceRoom({id,iceServers:config.iceServers,send:(to,data)=>lobby.send({type:'broadcast',event:'signal',payload:{from:id,to,room:selected,data}}),onStream:remoteStream,onStatus:(peer,status)=>{const n=document.getElementById('media-'+peer)?.querySelector('small');if(n)n.textContent=status==='connected'?'Voz conectada':status==='failed'?'Sin conexión':status==='connecting'?'Conectando…':status==='disconnected'?'Reconectando…':status;}});
- lastMutedTurn=null;updateAudioPrompt();await client.rpc('advance_room',{room});
+ updateAudioPrompt();await client.rpc('advance_room',{room});
  await track();await refresh();presence();renderChat();panel('chat');location.hash=room;$('session').scrollIntoView({behavior:'smooth'});
 }
 async function leave(){roomAudio.clear();voice?.close();voice=null;selected=null;$('enable-audio').hidden=true;loaded=null;history.replaceState(null,'',location.pathname);$('feedback').textContent='';player?.destroy?.();player=null;playerReady=false;if(!$('player'))$('player-shell').prepend(el('div',''));if(!$('player'))$('player-shell').firstElementChild.id='player';$('player-empty').hidden=false;$('people-video').replaceChildren();for(const [button,label]of [['mic','♩ Mic'],['cam','▣ Cámara']]){$(button).textContent=label+(button==='cam'?' apagada':' apagado');$(button).setAttribute('aria-pressed','false');}render();await track();}
@@ -73,8 +72,7 @@ window.onYouTubeIframeAPIReady=()=>{apiReady=true;syncPlayer();};
 const script=document.createElement('script');script.src='https://www.youtube.com/iframe_api';document.head.append(script);
 $('leave').onclick=()=>leave().catch(e=>feedback(e.message));$('home').onclick=e=>{e.preventDefault();leave().catch(e=>feedback(e.message));};
 async function toggleMic(){if(!voice)return;$('mic').disabled=true;try{await voice.toggle('audio');updateMic();await track();render();}catch{feedback('Revisá el permiso de micrófono del navegador.');}finally{$('mic').disabled=false;}}
-$('mic').onclick=()=>{if(!voice)return;if(!voice.local.audio&&states[selected]?.phase==='playing'&&!host())$('echo-dialog').showModal();else toggleMic();};
-$('echo-cancel').onclick=()=>$('echo-dialog').close();$('echo-accept').onclick=()=>{$('echo-dialog').close();player?.setVolume?.(20);toggleMic();};
+$('mic').onclick=()=>toggleMic();
 $('cam').onclick=async()=>{if(!voice)return;$('cam').disabled=true;try{const active=await voice.toggle('video');$('cam').textContent=active?'▣ Cámara encendida':'▣ Cámara apagada';$('cam').setAttribute('aria-pressed',String(active));await track();render();}catch{feedback('Revisá el permiso de cámara del navegador.');}finally{$('cam').disabled=false;}};
 $('enable-audio').onclick=()=>{const pending=roomAudio.unlock();syncPlayer();pending.then(()=>{updateAudioPrompt();feedback('');}).catch(()=>feedback('El navegador bloqueó el audio. Tocá nuevamente para habilitarlo.'));};
 $('begin').onclick=async()=>{if(!host()||!voice)return;const room=selected;$('begin').disabled=true;try{if(!voice.local.audio){await voice.toggle('audio');updateMic();await track();}if(selected!==room)return;const {error}=await client.rpc('begin_song',{room,client:id});if(error)throw error;await refresh();}catch(e){feedback(e.message||'No se pudo comenzar. Revisá el micrófono.');}finally{turnClock();}};
