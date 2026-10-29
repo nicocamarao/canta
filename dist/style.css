@@ -478,22 +478,23 @@ html.room-route-pending body:before{content:'Volviendo a la sala…';position:fi
  body:not(:has(#session:not([hidden]))) .enter,#create-room{font-size:20px!important}
 }
 @media(max-width:560px){
- body{font-size:15px}
+ body{font-size:14px}
  .connection,.badge,.song small,footer,.eyebrow,
  .section-label,.section-label>span,#people-count,#queue-count,
  #singer-video .participant small,#people-video .participant small,
  .queue-item small,.search-note,#search-status,.result small,
- #feedback,#profile-form>p,#room-form>p{font-size:14px!important}
+ #feedback,#profile-form>p,#room-form>p{font-size:13px!important}
  .person,.empty,.song p,#singer-video:empty:before,
  #singer-video .participant p,#people-video .participant p,
  .queue-item strong,.queue-number,#song-queue:empty:before,
  #messages:empty:before,.message strong,.message p,
  #profile-form label:not(.photo-picker),#room-form>label,.photo-picker,
- .profile-button span,#identity,input,textarea,select{font-size:16px!important}
+ .profile-button span,#identity{font-size:15px!important}
+ input,textarea,select{font-size:16px!important}
  #room-status,.turn-box p,
  .search-float-head strong,.result h3,dialog h2,dialog p,
- button{font-size:17px!important}
- .brand{font-size:28px!important}.room-header h1{font-size:24px!important}dialog h2{font-size:22px!important}
+ button{font-size:16px!important}
+ .brand{font-size:26px!important}.room-header h1{font-size:22px!important}dialog h2{font-size:20px!important}
  body:has(#session:not([hidden])) .room-header button,
  body:has(#session:not([hidden])) #pick-song,
  body:has(#session:not([hidden])) #begin,
@@ -503,8 +504,8 @@ html.room-route-pending body:before{content:'Volviendo a la sala…';position:fi
  body:has(#session:not([hidden])) #search-go,
  body:has(#session:not([hidden])) #search-cancel,
  body:has(#session:not([hidden])) .result button,
- body:not(:has(#session:not([hidden]))) .enter,#create-room{font-size:17px!important}
- body:has(#session:not([hidden])) .panel-tabs button{min-height:46px!important}
- body:has(#session:not([hidden])) .call-bar button{min-height:54px!important}
- body:has(#session:not([hidden])) .reaction-buttons button{font-size:22px!important}
+ body:not(:has(#session:not([hidden]))) .enter,#create-room{font-size:16px!important}
+ body:has(#session:not([hidden])) .panel-tabs button{min-height:44px!important}
+ body:has(#session:not([hidden])) .call-bar button{min-height:50px!important}
+ body:has(#session:not([hidden])) .reaction-buttons button{font-size:21px!important}
 }
