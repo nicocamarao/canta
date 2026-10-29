@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {playbackTarget,shouldStart} from '../dist/playback-clock.mjs';
+const t=Date.now(),room={phase:'playing',updated_at:new Date(t+5000).toISOString(),started_at:null};
+assert.equal(shouldStart(room,t+4999,true),false);
+assert.equal(shouldStart(room,t+5000,true),true);
+assert.equal(playbackTarget(room,t+9000,true),0,'slow singer must start at zero');
+assert.equal(shouldStart(room,t+9000,false),false,'spectators wait for actual playback');
+room.started_at=new Date(t+9000).toISOString();
+assert.equal(shouldStart(room,t+9499,false),false);
+assert.equal(shouldStart(room,t+9500,false),true);
+assert.equal(playbackTarget(room,t+10500,true)-playbackTarget(room,t+10500,false),.5);
+room.phase='choosing';assert.equal(shouldStart(room,t+12000,false),false);
+console.log('PASS: five-second gate, slow loading starts at zero, spectator target offset exactly 500 ms');
