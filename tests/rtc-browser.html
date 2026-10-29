@@ -1,0 +1,16 @@
+<!doctype html><meta charset="utf-8"><button id="run">Probar transmisión</button><pre id="out">Pendiente</pre><script type="module">
+import {VoiceRoom} from '../dist/rtc.js?v=negotiation-2';
+const out=document.querySelector('#out');document.querySelector('#run').onclick=async()=>{let a,b,ctx,timer;try{
+ctx=new AudioContext();await ctx.resume();const osc=ctx.createOscillator(),dest=ctx.createMediaStreamDestination();osc.connect(dest);osc.start();
+const canvas=document.createElement('canvas');canvas.width=160;canvas.height=90;const paint=canvas.getContext('2d');timer=setInterval(()=>{paint.fillStyle=`hsl(${Date.now()%360},70%,50%)`;paint.fillRect(0,0,160,90);},50);
+const video=canvas.captureStream(10).getVideoTracks()[0],audio=dest.stream.getAudioTracks()[0];
+const errors=[];const make=(id,other)=>new VoiceRoom({id,iceServers:[{urls:'stun:stun.l.google.com:19302'}],send:(_,data)=>setTimeout(()=>other().receive(id,data).catch(e=>errors.push(e.message)),0),onStream:()=>{},onStatus:()=>{}});
+a=make('a',()=>b);b=make('b',()=>a);a.local={audio:audio.clone(),video:video.clone()};b.local={audio:audio.clone(),video:video.clone()};
+await Promise.all([a.connect('b'),b.connect('a')]);
+const counts=async room=>{const stats=await [...room.peers.values()][0].pc.getStats();const c={audio:0,video:0};stats.forEach(s=>{if(s.type==='inbound-rtp')c[s.kind]+=s.bytesReceived||0;});return c;};
+for(let i=0;i<50;i++){await new Promise(r=>setTimeout(r,200));const ca=await counts(a),cb=await counts(b);out.textContent=JSON.stringify({a:ca,b:cb,states:[...a.peers.values(),...b.peers.values()].map(e=>({connection:e.pc.connectionState,ice:e.pc.iceConnectionState,transceivers:e.pc.getTransceivers().map(t=>({kind:t.receiver.track.kind,direction:t.currentDirection,sending:!!t.sender.track}))})),errors},null,2);if(ca.audio&&ca.video&&cb.audio&&cb.video){out.textContent='PASS: audio y video recibidos en ambos sentidos\n'+out.textContent;break;}}
+if(!out.textContent.startsWith('PASS'))throw Error('No hubo medios bidireccionales');
+for(const room of [a,b]){const e=[...room.peers.values()][0];if(e.pc.getTransceivers().length!==2)throw Error('Transceptores duplicados');await e.audio.sender.replaceTrack(null);await e.audio.sender.replaceTrack(audio.clone());}
+out.textContent+='\nPASS: dos transceptores por participante y reactivación de micrófono';
+}catch(e){out.textContent='FAIL: '+e.message+'\n'+out.textContent;}finally{a?.close();b?.close();clearInterval(timer);await ctx?.close();}};
+</script>

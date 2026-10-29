@@ -1,6 +1,6 @@
 import { ROOM_IDS, randomName } from './room-model.mjs';
 import { config } from './config.js';
-import { VoiceRoom } from './rtc.js';
+import { VoiceRoom } from './rtc.js?v=negotiation-2';
 import { RoomAudio } from './room-audio.mjs?v=1';
 const roomAudio=new RoomAudio();
 const $=id=>document.getElementById(id), id=sessionStorage.getItem('canta:client')||crypto.randomUUID();sessionStorage.setItem('canta:client',id);
