@@ -103,8 +103,6 @@ body:has(#session:not([hidden])) footer{display:none}body:has(#session:not([hidd
 #profile-form>p{font-size:13px;margin:0;color:var(--muted)}
 #room-form{display:flex;flex-direction:column;gap:12px}#room-form>label{font-size:13px;color:var(--muted)}#room-form>p{font-size:14px;color:var(--muted);margin:0}
 .message{display:grid;grid-template-columns:30px minmax(0,1fr);gap:9px;align-items:start}.message .avatar{width:30px;height:30px;margin:0;font-size:12px}.message p{overflow-wrap:anywhere}
-#pull-refresh{position:fixed;z-index:100;left:50%;top:0;transform:translate(-50%,-120%);padding:8px 14px;border-radius:0 0 12px 12px;background:var(--lime);color:#172014;font-size:13px;font-weight:700;box-shadow:0 5px 18px #0006;transition:transform .18s;pointer-events:none}
-#pull-refresh.visible{transform:translate(-50%,0)}#pull-refresh.ready{background:#f2f4eb}
 
 /* The host can finish directly below the YouTube player. */
 .player-actions:has(#stop-song:not([hidden])){display:flex}.player-actions:has(#stop-song[hidden]){display:none}
@@ -188,7 +186,7 @@ body{background:radial-gradient(circle at 12% -10%,#3b1755 0,transparent 32%),li
 .brand{letter-spacing:-1.2px}.brand span,.letter,.song-icon,.message strong,#turn-label{color:#e7a7ff}
 #lobby-intro h1{letter-spacing:-2.2px}em{color:#d9a7ff}
 .room,.video-panel,.people-panel,.interaction-panel,.queue-panel{background:linear-gradient(155deg,#21122f,#190e26);box-shadow:inset 0 1px #ffffff08}
-.enter,#chat-form button,#search button,#begin,.profile-save,#echo-accept,#pull-refresh{background:linear-gradient(135deg,#d7a7ff,#ef9bd7);color:#1a0925}
+.enter,#chat-form button,#search button,#begin,.profile-save,#echo-accept{background:linear-gradient(135deg,#d7a7ff,#ef9bd7);color:#1a0925}
 .enter:hover{background:linear-gradient(135deg,#e1bcff,#f4afe0)}
 .call-bar{background:#251334f5;border-color:#684580}.call-bar button,#stop-song{background:#3a2250}.call-bar button[aria-pressed=true]{background:#d7a7ff;color:#1a0925}
 #player-empty{background:radial-gradient(ellipse at center,#42205c,#160a22)}

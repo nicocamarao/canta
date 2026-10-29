@@ -16,15 +16,6 @@ $('tab-chat').onclick=()=>panel('chat');$('tab-search').onclick=()=>panel($('sea
 $('search-close').onclick=$('search-cancel').onclick=()=>panel('chat');
 const feedback=message=>{$('feedback').textContent=message;};
 const el=(tag,cls,text)=>{const n=document.createElement(tag);n.className=cls;if(text!==undefined)n.textContent=text;return n;};
-{
- let start=null,distance=0;
- const indicator=$('pull-refresh'),scrollAreas='#messages,#results,#people-video,#song-queue,#rooms';
- const reset=()=>{start=null;distance=0;indicator.classList.remove('visible','ready');indicator.textContent='↓ Deslizá para actualizar';};
- document.addEventListener('touchstart',event=>{if(event.touches.length!==1||document.querySelector('dialog[open]'))return;const area=event.target.closest?.(scrollAreas);if(area&&area.scrollTop>0)return;const touch=event.touches[0];start={x:touch.clientX,y:touch.clientY};distance=0;},{passive:true,capture:true});
- document.addEventListener('touchmove',event=>{if(!start||event.touches.length!==1)return;const touch=event.touches[0],down=touch.clientY-start.y,side=Math.abs(touch.clientX-start.x);if(down<=0||side>down){reset();return;}distance=Math.min(down,140);if(distance<12)return;event.preventDefault();indicator.classList.add('visible');indicator.classList.toggle('ready',distance>=100);indicator.textContent=distance>=100?'↑ Soltá para actualizar':'↓ Deslizá para actualizar';},{passive:false,capture:true});
- document.addEventListener('touchend',()=>{if(distance>=100){indicator.textContent='Actualizando…';indicator.classList.add('visible','ready');setTimeout(()=>location.reload(),80);}else reset();},{passive:true,capture:true});
- document.addEventListener('touchcancel',reset,{passive:true,capture:true});
-}
 function setAvatar(node,personName,personPhoto){node.textContent=personPhoto?'':personName.slice(0,1).toUpperCase();node.style.backgroundImage=personPhoto?`url("${personPhoto}")`:'';node.classList.toggle('has-photo',!!personPhoto);}
 function avatar(personName,personPhoto){const node=el('div','avatar');setAvatar(node,personName,personPhoto);return node;}
 function showReaction(clientId){const box=document.getElementById(clientId===id?'self':'media-'+clientId);if(!box)return;const heart=el('span','reaction-burst','♥');box.append(heart);heart.addEventListener('animationend',()=>heart.remove(),{once:true});}
