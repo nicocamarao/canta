@@ -10,7 +10,7 @@ alter table public.room_sessions enable row level security;
 revoke all on public.room_sessions from anon,authenticated;
 create or replace function public.live_members() returns table(id text,name text,"roomId" text,mic boolean,cam boolean)
 language sql security definer set search_path=public as $$
- select client_id,display_name,room_id,mic,cam from room_sessions where auth.uid() is not null and last_seen_at>now()-interval '8 seconds';
+ select client_id,display_name,room_id,mic,cam from room_sessions where auth.uid() is not null and last_seen_at>now()-interval '12 seconds';
 $$;
 create or replace function public.advance_room(room text) returns void language plpgsql security definer set search_path=public as $$
 declare r rooms%rowtype; q song_queue%rowtype;
@@ -18,8 +18,8 @@ begin
  if auth.uid() is null then raise exception 'Sign in required';end if;
  select * into r from rooms where id=room for update;
  if not found then return;end if;
- delete from song_queue pending where pending.room_id=room and not exists(select 1 from room_sessions s where s.client_id=pending.client_id and s.user_id=pending.user_id and s.room_id=room and s.last_seen_at>now()-interval '8 seconds');
- if exists(select 1 from room_sessions s where s.client_id=r.singer_client and s.user_id=r.host_id and s.room_id=room and s.last_seen_at>now()-interval '8 seconds') then
+ delete from song_queue pending where pending.room_id=room and not exists(select 1 from room_sessions s where s.client_id=pending.client_id and s.user_id=pending.user_id and s.room_id=room and s.last_seen_at>now()-interval '12 seconds');
+ if exists(select 1 from room_sessions s where s.client_id=r.singer_client and s.user_id=r.host_id and s.room_id=room and s.last_seen_at>now()-interval '12 seconds') then
   if r.phase='ready' and r.ready_until>now() then return;end if;
   if r.phase='playing' and r.ends_at>now() then return;end if;
  end if;
@@ -36,7 +36,7 @@ declare room_id text;
 begin
  if auth.uid() is null then raise exception 'Sign in required';end if;
  for room_id in select id from rooms order by id loop perform advance_room(room_id);end loop;
- delete from room_sessions where last_seen_at<=now()-interval '8 seconds';
+ delete from room_sessions where last_seen_at<=now()-interval '12 seconds';
 end $$;
 create or replace function public.room_pulse(room text,client text,singer text,mic_on boolean,cam_on boolean) returns void language plpgsql security definer set search_path=public as $$
 begin
@@ -57,7 +57,7 @@ begin
  update rooms set phase='playing',playing=true,position=0,updated_at=now()+interval '5 seconds',started_at=null,
  ends_at=now()+interval '20 seconds',ready_until=null
  where id=room and host_id=auth.uid() and singer_client=client and phase='ready' and ready_until>now()
- and exists(select 1 from room_sessions where client_id=client and user_id=auth.uid() and room_id=room and last_seen_at>now()-interval '8 seconds');
+ and exists(select 1 from room_sessions where client_id=client and user_id=auth.uid() and room_id=room and last_seen_at>now()-interval '12 seconds');
  if not found then raise exception 'El turno venció o no estás en la sala.';end if;
 end $$;
 create or replace function public.confirm_song_started(room text,client text,at_position double precision) returns void language plpgsql security definer set search_path=public as $$
