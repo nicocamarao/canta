@@ -303,3 +303,24 @@ body.chat-only-room #people-video{grid-template-columns:repeat(3,minmax(0,1fr))!
  html,body{touch-action:pan-x pan-y}
  input,textarea,select{font-size:max(16px,1em)}
 }
+@media(max-width:560px){
+ body:has(#session:not([hidden])){font-size:19px}
+ .room-header h1{font-size:28px}.room-header button{min-height:42px!important;font-size:17px!important;padding:6px 8px}
+ .section-label,#people-count,#queue-count,.singer-panel .section-label,.people-panel .section-label,.video-panel .section-label{font-size:14px!important;font-weight:800}
+ #room-status{font-size:20px!important}
+ #pick-song{min-height:44px;font-size:17px!important;font-weight:800}
+ .turn-box p{font-size:17px!important}
+ #singer-video .participant,#people-video .participant{padding:7px!important;border:1px solid #63427a}
+ #singer-video .participant p,#people-video .participant p{font-size:16px!important;font-weight:700;line-height:1.3}
+ #singer-video .participant small,#people-video .participant small{display:block;font-size:13px!important}
+ #singer-video .participant .avatar,#people-video .participant .avatar{width:42px;height:42px;font-size:21px}
+ #singer-video:empty:before{font-size:15px;font-weight:600}
+ .queue-item strong{font-size:16px}.queue-item small{font-size:14px}.queue-number{font-size:17px}
+ .panel-tabs button{min-height:44px!important;font-size:18px!important;padding:7px 10px}
+ #chat-form input{min-height:48px;font-size:18px!important}#chat-form button{min-height:48px;min-width:52px;font-size:27px}
+ .call-bar{gap:6px!important;padding:6px!important}
+ .call-bar button{min-height:56px!important;padding:8px 5px!important;font-size:16px!important;font-weight:900;line-height:1.2!important}
+ #search-panel input{min-height:48px;font-size:17px!important}#search-go{min-height:48px;font-size:16px}
+ #search-close{min-width:42px;min-height:42px;font-size:27px}#search-cancel{min-height:48px;font-size:17px}
+ .result button{min-height:48px;font-size:16px}
+}
