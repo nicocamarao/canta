@@ -3,10 +3,10 @@ import {VoiceRoom} from '../dist/rtc.js';
 
 const endedTrack={readyState:'ended',stop(){}},track={readyState:'live',stop(){}};
 let calls=0;
-Object.defineProperty(globalThis,'navigator',{value:{mediaDevices:{enumerateDevices:async()=>[],getUserMedia:async constraints=>{
+Object.defineProperty(globalThis,'navigator',{value:{mediaDevices:{enumerateDevices:async()=>{assert.equal(calls,1,'permission request must happen before enumeration');return [];},getUserMedia:async constraints=>{
  calls++;
- if(calls===1)assert.deepEqual(constraints,{video:{width:640,height:360},audio:false});
- else assert.deepEqual(constraints,{video:true,audio:false});
+ if(calls===1)assert.deepEqual(constraints,{video:true,audio:false});
+ else assert.deepEqual(constraints,{video:{width:640,height:360},audio:false});
  const selected=calls===1?endedTrack:track;
  return {getVideoTracks:()=>[selected],getTracks:()=>[selected]};
 }}}});
@@ -17,4 +17,4 @@ assert.equal(await room.toggle('video'),true);
 assert.equal(room.local.video,track);
 assert.ok(room.localStreams.video,'the complete MediaStream must remain referenced on mobile');
 assert.equal(calls,2);
-console.log('PASS: mobile camera rejects ended tracks, falls back, and ignores stale peer senders');
+console.log('PASS: mobile camera asks permission before enumeration, rejects ended tracks, and falls back');

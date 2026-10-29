@@ -1,8 +1,17 @@
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function openCamera(){
- const attempts=[{width:640,height:360},true],failures=[];
- try{for(const device of await navigator.mediaDevices.enumerateDevices())if(device.kind==='videoinput'&&device.deviceId)attempts.push({deviceId:{exact:device.deviceId}});}catch{}
+ const attempts=[true],failures=[];
  for(const video of attempts)try{
+  const stream=await navigator.mediaDevices.getUserMedia({video,audio:false});
+  await delay(250);
+  const track=stream.getVideoTracks?.()[0]||stream.getTracks()[0];
+  if(track?.readyState==='live')return stream;
+  for(const item of stream.getTracks())item.stop();
+  failures.push('pista terminada');
+ }catch(error){if(['NotAllowedError','SecurityError'].includes(error?.name))throw error;failures.push((error?.name||'Error')+': '+(error?.message||''));}
+ const detected=[{width:640,height:360}];
+ try{for(const device of await navigator.mediaDevices.enumerateDevices())if(device.kind==='videoinput'&&device.deviceId)detected.push({deviceId:{exact:device.deviceId}});}catch(error){failures.push('enumerateDevices: '+(error?.message||error));}
+ for(const video of detected)try{
   const stream=await navigator.mediaDevices.getUserMedia({video,audio:false});
   await delay(250);
   const track=stream.getVideoTracks?.()[0]||stream.getTracks()[0];
