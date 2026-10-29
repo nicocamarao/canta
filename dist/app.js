@@ -1,0 +1,76 @@
+import { ROOM_IDS, randomName } from './room-model.mjs';
+import { config } from './config.js';
+import { VoiceRoom } from './rtc.js';
+const $=id=>document.getElementById(id), id=crypto.randomUUID();
+const name=sessionStorage.getItem('canta:name')||randomName();sessionStorage.setItem('canta:name',name);
+let client,lobby,uid,selected=null,states={},members=[],voice,ready=false,online=false,player,playerReady=false,loaded=null,offset=0,suppressUntil=0,busy=false;
+const feedback=message=>{$('feedback').textContent=message;};
+const el=(tag,cls,text)=>{const n=document.createElement(tag);n.className=cls;if(text!==undefined)n.textContent=text;return n;};
+const host=()=>!!selected&&states[selected]?.host_id===uid;
+const now=()=>Date.now()+offset;
+const target=r=>Math.max(0,r.position+(r.playing?(now()-Date.parse(r.updated_at))/1000:0));
+function render(){
+ $('identity').textContent=name;
+ $('rooms').replaceChildren(...ROOM_IDS.map(room=>{
+  const people=members.filter(p=>p.roomId===room),state=states[room],card=el('article','room'+(selected===room?' active':''));
+  const top=el('div','top');top.append(el('span','letter',room),el('span','badge',`${people.length} ${people.length===1?'persona':'personas'}`));
+  const list=el('div','people');if(!people.length)list.append(el('span','empty','Todavía no hay nadie. Sé el primero.'));
+  people.forEach(p=>list.append(el('span','person',p.name+(p.id===id?' · vos':''))));
+  const song=el('div','song'),label=el('div','');label.append(el('small','',state?.video_id?'EN LA SALA':'ESTADO'),el('p','',state?.title||'Escogiendo'));song.append(el('span','song-icon',state?.video_id?'♫':'◌'),label);
+  const enter=el('button','enter',selected===room?'Estás en esta sala':'Entrar a la sala ↗');enter.disabled=!online;enter.onclick=()=>join(room).catch(e=>feedback(e.message));
+  card.append(top,el('h2','',`Sala ${room}`),list,song,enter);return card;
+ }));
+ $('session').hidden=!selected;
+ if(selected){$('room-title').textContent=`Sala ${selected}`;$('room-status').textContent=(states[selected]?.title||'Escogiendo')+(host()?' · Vos controlás la canción':'');}
+ $('play').disabled=!host();$('claim').hidden=host();
+ for(const button of document.querySelectorAll('[data-sing]'))button.disabled=!host();
+}
+async function refresh(){const {data,error}=await client.from('rooms').select('*');if(error)throw error;states=Object.fromEntries(data.map(r=>[r.id,r]));render();syncPlayer();}
+async function clock(){const start=Date.now();const {data,error}=await client.rpc('server_time');if(!error)offset=Date.parse(data)-(start+Date.now())/2;}
+async function track(){if(online)await lobby.track({id,name,roomId:selected,mic:!!voice?.local.audio,cam:!!voice?.local.video});}
+function presence(){members=Object.values(lobby.presenceState()).flat();render();if(!voice)return;
+ const peers=members.filter(p=>p.roomId===selected&&p.id!==id);
+ for(const p of peers)voice.connect(p.id).catch(e=>feedback('No se pudo iniciar la conexión de voz: '+e.message));
+ for(const peer of voice.peers.keys())if(!peers.some(p=>p.id===peer))voice.remove(peer);
+ for(const p of peers){const node=document.getElementById('media-'+p.id);if(node)node.querySelector('p').textContent=p.name+(p.mic?' · Mic encendido':' · Mic apagado');}
+}
+function remoteStream(peer,stream){let box=document.getElementById('media-'+peer);if(!stream){box?.remove();return;}if(!box){box=el('div','participant');box.id='media-'+peer;const v=el('video','');v.autoplay=true;v.playsInline=true;box.append(v,el('p','',members.find(p=>p.id===peer)?.name||'Participante'),el('small','','Conectando voz…'));$('people-video').append(box);}const v=box.querySelector('video');v.srcObject=stream;v.play().catch(()=>feedback('Pulsá “Activar sonido” para escuchar a tus amigos.'));}
+async function join(room){if(selected===room)return;await leave();selected=room;
+ voice=new VoiceRoom({id,iceServers:config.iceServers,send:(to,data)=>lobby.send({type:'broadcast',event:'signal',payload:{from:id,to,room:selected,data}}),onStream:remoteStream,onStatus:(peer,status)=>{const n=document.getElementById('media-'+peer)?.querySelector('small');if(n)n.textContent=status==='connected'?'Voz conectada':status==='failed'?'Conexión fallida. Esta red puede necesitar TURN.':status;}});
+ const {error}=await client.rpc('claim_room',{room});if(error)feedback(error.message);
+ await track();await refresh();presence();location.hash=room;$('session').scrollIntoView({behavior:'smooth'});
+}
+async function leave(){if(selected&&client&&host())await client.rpc('release_room',{room:selected});voice?.close();voice=null;selected=null;loaded=null;player?.stopVideo?.();$('player-empty').hidden=false;$('people-video').replaceChildren();for(const [button,label]of [['mic','Micrófono'],['cam','Cámara']]){$(button).textContent=label+' apagado';$(button).setAttribute('aria-pressed','false');}await track();render();}
+async function savePlayback(video,title,playing,position){if(!online||!host())return;const {error}=await client.rpc('set_playback',{room:selected,video,song_title:title,is_playing:playing,at_position:position});if(error)throw error;await refresh();}
+async function publishPosition(){if(!host()||!playerReady||!loaded||Date.now()<suppressUntil)return;const r=states[selected];await savePlayback(loaded,r.title,player.getPlayerState()===1,player.getCurrentTime());}
+function syncPlayer(force=false){if(!selected||!playerReady)return;const r=states[selected];if(!r?.video_id)return;const t=target(r);$('player-empty').hidden=true;
+ if(loaded!==r.video_id){loaded=r.video_id;suppressUntil=Date.now()+2000;if(r.playing)player.loadVideoById({videoId:loaded,startSeconds:t});else player.cueVideoById({videoId:loaded,startSeconds:t});return;}
+ if(host()&&!force)return;
+ suppressUntil=Date.now()+1200;if(force||Math.abs(player.getCurrentTime()-t)>0.8)player.seekTo(t,true);
+ if(r.playing&&player.getPlayerState()!==1)player.playVideo();if(!r.playing&&player.getPlayerState()===1)player.pauseVideo();
+}
+window.onYouTubeIframeAPIReady=()=>{player=new YT.Player('player',{height:'360',width:'640',playerVars:{playsinline:1,origin:location.origin},events:{onReady:()=>{playerReady=true;syncPlayer();},onStateChange:()=>{if(host()&&Date.now()>suppressUntil)publishPosition().catch(e=>feedback(e.message));},onError:()=>feedback('Este video no se puede reproducir aquí. Elegí otro resultado.'),onAutoplayBlocked:()=>feedback('Pulsá “Activar sonido” para comenzar la reproducción.')}});};
+const script=document.createElement('script');script.src='https://www.youtube.com/iframe_api';document.head.append(script);
+$('leave').onclick=()=>leave().catch(e=>feedback(e.message));
+for(const [button,kind,label]of [['mic','audio','Micrófono'],['cam','video','Cámara']])$(button).onclick=async()=>{if(!voice)return;$(button).disabled=true;try{const active=await voice.toggle(kind);$(button).textContent=label+(active?' encendido':' apagado');$(button).setAttribute('aria-pressed',String(active));await track();}catch(e){feedback('No se pudo activar '+label.toLowerCase()+'. Revisá los permisos del navegador.');}finally{$(button).disabled=false;}};
+$('listen').onclick=()=>{document.querySelectorAll('video').forEach(v=>v.play().catch(()=>{}));if(states[selected]?.playing)player?.playVideo?.();};
+$('sync').onclick=()=>syncPlayer(true);
+$('claim').onclick=async()=>{const {data,error}=await client.rpc('claim_room',{room:selected});feedback(error?error.message:data?'Ahora controlás la canción.':'Otra persona está controlando la canción.');await refresh();};
+$('play').onclick=()=>{if(!host()||!loaded)return;player.getPlayerState()===1?player.pauseVideo():player.playVideo();};
+$('share').onclick=async()=>{try{await navigator.clipboard.writeText(location.href);feedback('Enlace copiado. Compartilo con tu amigo.');}catch{feedback('Compartí este enlace: '+location.href);}};
+function quotaDay(){return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}
+const cache=new Map();
+$('search').onsubmit=async e=>{e.preventDefault();if(busy)return;const q=$('query').value.trim();if(!q)return;
+ if(!config.youtubeKey){$('search-status').textContent='La clave de YouTube aún no está configurada.';return;}
+ if(localStorage.getItem('canta:quota')===quotaDay()){$('search-status').textContent='Cuota diaria agotada. Podés volver a buscar mañana.';return;}
+ busy=true;$('search-go').disabled=true;$('search-status').textContent='Buscando karaokes…';
+ try{let results=cache.get(q.toLowerCase());if(!results){const params=new URLSearchParams({part:'snippet',type:'video',videoEmbeddable:'true',videoSyndicated:'true',maxResults:'25',q:q+' karaoke',key:config.youtubeKey});const response=await fetch('https://www.googleapis.com/youtube/v3/search?'+params);const json=await response.json();if(!response.ok){const reason=json.error?.errors?.[0]?.reason;if(['quotaExceeded','dailyLimitExceeded'].includes(reason)){localStorage.setItem('canta:quota',quotaDay());throw new Error('Cuota diaria agotada. Las búsquedas quedan bloqueadas hasta mañana.');}throw new Error('No se pudo buscar en YouTube. Revisá la configuración o intentá más tarde.');}results=json.items.filter(x=>/\bkaraoke\b/i.test(x.snippet.title));cache.set(q.toLowerCase(),results);}
+ $('results').replaceChildren(...results.map(item=>{const card=el('article','result');const img=el('img','');img.src=item.snippet.thumbnails.medium.url;img.alt='';const title=new DOMParser().parseFromString(item.snippet.title,'text/html').body.textContent;const button=el('button','','Cantar esta canción');button.dataset.sing='1';button.disabled=!host();button.onclick=()=>savePlayback(item.id.videoId,title,true,0).catch(e=>feedback(e.message));card.append(img,el('h3','',title),el('small','',item.snippet.channelTitle),button);return card;}));$('search-status').textContent=results.length?`${results.length} karaokes encontrados.`:'No encontramos títulos con “karaoke”. Probá con otro nombre.';
+ }catch(error){$('search-status').textContent=error.message;}finally{busy=false;$('search-go').disabled=false;}
+};
+async function start(){render();if(!config.supabaseUrl||!config.supabaseKey){$('connection').textContent='Salas pendientes de conexión a Supabase. Todavía no se puede entrar.';return;}
+ try{const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');client=createClient(config.supabaseUrl,config.supabaseKey,{auth:{storage:sessionStorage}});const {data:session}=await client.auth.getSession();let user=session.session?.user;if(!user){const {data,error}=await client.auth.signInAnonymously();if(error)throw error;user=data.user;}uid=user.id;
+ await clock();await refresh();lobby=client.channel('canta-lobby',{config:{presence:{key:id}}});lobby.on('presence',{event:'sync'},presence).on('broadcast',{event:'signal'},({payload:p})=>{if(p.to===id&&p.room===selected&&members.some(m=>m.id===p.from&&m.roomId===selected))voice?.receive(p.from,p.data).catch(()=>feedback('No se pudo conectar la voz. Volvé a entrar en la sala.'));}).on('postgres_changes',{event:'UPDATE',schema:'public',table:'rooms'},({new:r})=>{states[r.id]=r;render();syncPlayer();}).subscribe(async status=>{online=status==='SUBSCRIBED';$('connection').textContent=online?'● Salas conectadas · Entrá y compartí tu enlace':'Reconectando salas…';render();if(online){await track();await refresh();if(!ready){ready=true;const room=location.hash.slice(1);if(ROOM_IDS.includes(room))await join(room);}}});
+ setInterval(()=>{if(!online)return;refresh().catch(()=>{});if(host()){client.rpc('claim_room',{room:selected});publishPosition().catch(()=>{});}else syncPlayer();},5000);setInterval(()=>clock().catch(()=>{}),60000);
+ }catch(e){$('connection').textContent='No se pudo conectar: '+e.message;}}
+window.addEventListener('pagehide',()=>{voice?.close();lobby?.untrack();});start();
