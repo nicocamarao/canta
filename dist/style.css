@@ -291,13 +291,16 @@ body.chat-only-room #people-video{grid-template-columns:repeat(3,minmax(0,1fr))!
 .participant{overflow:visible!important}
 .reaction-burst{position:absolute;z-index:40;left:50%;top:42%;color:#ff7fcd;font-size:42px;line-height:1;filter:drop-shadow(0 0 10px #fff) drop-shadow(0 0 18px #ff58c7);pointer-events:none;animation:reaction-float 1.45s ease-out forwards}
 @keyframes reaction-float{0%{opacity:0;transform:translate(-50%,10px) scale(.45) rotate(-10deg)}20%{opacity:1;transform:translate(-50%,-5px) scale(1.25) rotate(8deg)}100%{opacity:0;transform:translate(-50%,-105px) scale(.9) rotate(-8deg)}}
-#like{background:linear-gradient(135deg,#ff8dd1,#e9a9ff)!important;color:#26091f!important;border-color:#ffc7eb!important;box-shadow:0 0 20px #ff79ca66}
+.reaction-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));flex:1;min-width:0;gap:4px}
+.reaction-buttons button{min-width:0!important;padding:5px!important;font-size:24px!important;background:linear-gradient(135deg,#ff8dd1,#e9a9ff)!important;color:#26091f!important;border-color:#ffc7eb!important;box-shadow:0 0 16px #ff79ca55}
+.reaction-buttons button:active{transform:scale(.9)}
 @media(max-width:1100px){
  .interaction-panel{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto minmax(0,1fr) auto!important}
  .panel-tabs{grid-column:1!important;grid-row:1!important}
  #chat-panel{grid-column:1!important;grid-row:2!important}
  .call-bar{grid-column:1!important;grid-row:3!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));align-self:auto!important}
  .call-bar button{white-space:normal!important;line-height:1.15}
+ .reaction-buttons{min-height:100%}
 }
 @media(max-width:1100px){
  html,body{touch-action:pan-x pan-y}
@@ -320,6 +323,7 @@ body.chat-only-room #people-video{grid-template-columns:repeat(3,minmax(0,1fr))!
  #chat-form input{min-height:48px;font-size:18px!important}#chat-form button{min-height:48px;min-width:52px;font-size:27px}
  .call-bar{gap:6px!important;padding:6px!important}
  .call-bar button{min-height:56px!important;padding:8px 5px!important;font-size:16px!important;font-weight:900;line-height:1.2!important}
+ .reaction-buttons button{font-size:25px!important;padding:4px!important}
  #search-panel input{min-height:48px;font-size:17px!important}#search-go{min-height:48px;font-size:16px}
  #search-close{min-width:42px;min-height:42px;font-size:27px}#search-cancel{min-height:48px;font-size:17px}
  .result button{min-height:48px;font-size:16px}
@@ -331,6 +335,7 @@ body.chat-only-room #people-video{grid-template-columns:repeat(3,minmax(0,1fr))!
  body:has(#session:not([hidden])) #stop-song{font-size:19px!important}
  body:has(#session:not([hidden])) .panel-tabs button{min-height:48px!important;font-size:20px!important}
  body:has(#session:not([hidden])) .call-bar button{min-height:64px!important;font-size:19px!important;letter-spacing:-.2px}
+ body:has(#session:not([hidden])) .reaction-buttons button{font-size:27px!important}
  body:has(#session:not([hidden])) #search-go,
  body:has(#session:not([hidden])) #search-cancel,
  body:has(#session:not([hidden])) .result button{font-size:18px!important}
