@@ -3,7 +3,7 @@ begin
  if auth.uid() is null then raise exception 'Sign in required';end if;
  perform 1 from rooms where id=room for update;
  if not found then raise exception 'Unknown room';end if;
- if not exists(select 1 from room_sessions where client_id=client and user_id=auth.uid() and room_id=room and last_seen_at>now()-interval '12 seconds') then raise exception 'Tu conexión a la sala venció. Recargá la página y volvé a entrar.';end if;
+ if not exists(select 1 from room_sessions where client_id=client and user_id=auth.uid() and room_id=room and last_seen_at>now()-interval '15 seconds') then raise exception 'Tu conexión a la sala venció. Recargá la página y volvé a entrar.';end if;
  if (select count(*) from song_queue where room_id=room)>=30 then raise exception 'La lista está llena (30 canciones).';end if;
  if (select count(*) from song_queue where user_id=auth.uid())>=5 then raise exception 'Ya tenés 5 canciones en espera.';end if;
  if song_title !~* '\mkaraoke\M' then raise exception 'Solo versiones karaoke';end if;

@@ -21,7 +21,12 @@ export class VoiceRoom {
  }
  async toggle(kind) {
   if(this.local[kind]){const old=this.local[kind];this.local[kind]=null;for(const e of this.peers.values())if(e[kind])await e[kind].sender.replaceTrack(null);old.stop();return false;}
-  const stream=await navigator.mediaDevices.getUserMedia(kind==='audio'?{audio:{echoCancellation:true,noiseSuppression:true},video:false}:{video:{width:640,height:360},audio:false});
+  let stream;
+  if(kind==='audio')stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
+  else{
+   try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'},width:{ideal:640},height:{ideal:360}},audio:false});}
+   catch(error){if(!['OverconstrainedError','NotFoundError','TypeError'].includes(error?.name))throw error;stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});}
+  }
   this.local[kind]=stream.getTracks()[0];for(const e of this.peers.values())if(e[kind])await e[kind].sender.replaceTrack(this.local[kind]);return true;
  }
  remove(id){const e=this.peers.get(id);if(e){e.pc.close();this.peers.delete(id);this.onStream(id,null);}}

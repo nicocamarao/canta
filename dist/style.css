@@ -324,3 +324,124 @@ body.chat-only-room #people-video{grid-template-columns:repeat(3,minmax(0,1fr))!
  #search-close{min-width:42px;min-height:42px;font-size:27px}#search-cancel{min-height:48px;font-size:17px}
  .result button{min-height:48px;font-size:16px}
 }
+@media(max-width:560px){
+ body:has(#session:not([hidden])) .room-header button{font-size:18px!important}
+ body:has(#session:not([hidden])) #pick-song,
+ body:has(#session:not([hidden])) #begin,
+ body:has(#session:not([hidden])) #stop-song{font-size:19px!important}
+ body:has(#session:not([hidden])) .panel-tabs button{min-height:48px!important;font-size:20px!important}
+ body:has(#session:not([hidden])) .call-bar button{min-height:64px!important;font-size:19px!important;letter-spacing:-.2px}
+ body:has(#session:not([hidden])) #search-go,
+ body:has(#session:not([hidden])) #search-cancel,
+ body:has(#session:not([hidden])) .result button{font-size:18px!important}
+ body:not(:has(#session:not([hidden]))) .enter,
+ #create-room{font-size:18px!important}
+}
+@media(max-width:560px){
+ body{font-size:20px}
+ .brand{font-size:34px}.profile-button span,#identity{font-size:16px}
+ #lobby-intro h1{font-size:28px}.connection{font-size:13px}.letter{font-size:27px}.badge{font-size:14px}
+ .person,.empty{font-size:15px}.song small{font-size:12px}.song p{font-size:17px}
+ .room-header .eyebrow{font-size:13px}.room-header h1{font-size:29px}
+ .section-label,#people-count,#queue-count,.singer-panel .section-label,.people-panel .section-label,.video-panel .section-label{font-size:15px!important}
+ #room-status{font-size:22px!important}.turn-box p{font-size:18px!important}
+ #singer-video:empty:before{font-size:17px}
+ #singer-video .participant p,#people-video .participant p{font-size:18px!important}
+ #singer-video .participant small,#people-video .participant small{font-size:15px!important}
+ .queue-item strong{font-size:18px}.queue-item small{font-size:15px}.queue-number{font-size:18px}
+ #song-queue:empty:before{font-size:16px}
+ #messages:empty:before{font-size:17px}.message strong{font-size:17px}.message p{font-size:20px!important}
+ #chat-form input{font-size:19px!important}
+ .search-float-head strong{font-size:21px}.search-note,#search-status{font-size:16px}
+ .result h3{font-size:18px}.result small{font-size:15px}
+ #feedback{font-size:16px}
+ dialog h2{font-size:28px}dialog p,#profile-form>p,#room-form>p{font-size:16px!important}
+ #profile-form label:not(.photo-picker),#room-form>label,.photo-picker{font-size:17px}
+}
+@media(max-width:560px){
+ body{font-size:22px}
+ button{font-size:22px}
+ body:has(#session:not([hidden])) .room-header button{font-size:20px!important}
+ body:has(#session:not([hidden])) #pick-song,
+ body:has(#session:not([hidden])) #begin,
+ body:has(#session:not([hidden])) #stop-song{font-size:22px!important}
+ body:has(#session:not([hidden])) .panel-tabs button{min-height:54px!important;font-size:22px!important}
+ body:has(#session:not([hidden])) .call-bar button{min-height:72px!important;font-size:21px!important}
+ #room-status{font-size:25px!important}.turn-box p{font-size:21px!important}
+ #singer-video .participant p,#people-video .participant p{font-size:20px!important}
+ .queue-item strong{font-size:20px}.message p{font-size:22px!important}
+ #chat-form input,#search-panel input{font-size:21px!important}
+ .search-float-head strong{font-size:24px}.result h3{font-size:21px}
+ body:not(:has(#session:not([hidden]))) .enter,#create-room{font-size:21px!important}
+}
+@media(max-width:560px){
+ .connection,.badge,.person,.empty,.song small,.song p,footer,
+ .eyebrow,.section-label,#people-count,#queue-count,
+ #singer-video:empty:before,#singer-video .participant small,#people-video .participant small,
+ .queue-item small,#song-queue:empty:before,
+ #messages:empty:before,.message strong,
+ .search-note,#search-status,.result small,#feedback,
+ dialog p,#profile-form>p,#room-form>p,
+ #profile-form label:not(.photo-picker),#room-form>label,.photo-picker{font-size:20px!important}
+ .profile-button span,#identity{font-size:20px!important}
+ .profile-button .avatar{width:38px;height:38px;font-size:20px!important}
+ .section-label>span{font-size:20px!important}
+}
+html.room-route-pending #lobby-intro,html.room-route-pending .lobby-actions,html.room-route-pending #rooms,html.room-route-pending footer{visibility:hidden}
+html.room-route-pending body:before{content:'Volviendo a la sala…';position:fixed;z-index:80;inset:50% auto auto 50%;transform:translate(-50%,-50%);padding:16px 22px;border:1px solid #9d6bb7;border-radius:16px;background:#21122ff2;color:#fff;font-size:20px;font-weight:800;box-shadow:0 18px 55px #000a}
+@media(max-width:560px){
+ body{font-size:18px}
+ button,input,textarea,select{font-size:18px!important}
+ .connection,.badge,.person,.empty,.song small,.song p,footer,
+ .eyebrow,.section-label,.section-label>span,#people-count,#queue-count,
+ #singer-video:empty:before,#singer-video .participant p,#people-video .participant p,
+ #singer-video .participant small,#people-video .participant small,
+ .queue-item strong,.queue-item small,.queue-number,#song-queue:empty:before,
+ #messages:empty:before,.message strong,.message p,
+ .search-note,#search-status,.result h3,.result small,#feedback,
+ dialog p,#profile-form>p,#room-form>p,
+ #profile-form label:not(.photo-picker),#room-form>label,.photo-picker,
+ .profile-button span,#identity{font-size:18px!important}
+ .brand{font-size:32px}.room-header h1{font-size:27px}#room-status{font-size:22px!important}
+ body:has(#session:not([hidden])) .room-header button,
+ body:has(#session:not([hidden])) #pick-song,
+ body:has(#session:not([hidden])) #begin,
+ body:has(#session:not([hidden])) #stop-song,
+ body:has(#session:not([hidden])) .panel-tabs button,
+ body:has(#session:not([hidden])) .call-bar button,
+ body:has(#session:not([hidden])) #search-go,
+ body:has(#session:not([hidden])) #search-cancel,
+ body:has(#session:not([hidden])) .result button,
+ body:not(:has(#session:not([hidden]))) .enter,#create-room{font-size:18px!important}
+ body:has(#session:not([hidden])) .panel-tabs button{min-height:48px!important}
+ body:has(#session:not([hidden])) .call-bar button{min-height:60px!important}
+}
+@media(max-width:560px){
+ body{font-size:16px}
+ body *{font-size:18px!important}
+ .connection,.badge,.song small,footer,.eyebrow,
+ .section-label,.section-label>span,#people-count,#queue-count,
+ #singer-video .participant small,#people-video .participant small,
+ .queue-item small,.search-note,#search-status,.result small,
+ #feedback,#profile-form>p,#room-form>p{font-size:15px!important}
+ .person,.empty,.song p,#singer-video:empty:before,
+ #singer-video .participant p,#people-video .participant p,
+ .queue-item strong,.queue-number,#song-queue:empty:before,
+ #messages:empty:before,.message strong,
+ #profile-form label:not(.photo-picker),#room-form>label,.photo-picker,
+ .profile-button span,#identity{font-size:16px!important}
+ .brand,.room-header h1,#room-status,.turn-box p,.message p,
+ .search-float-head strong,.result h3,dialog h2,dialog p,
+ button,input,textarea,select{font-size:18px!important}
+ .profile-button .avatar{font-size:18px!important}
+ body:has(#session:not([hidden])) .room-header button,
+ body:has(#session:not([hidden])) #pick-song,
+ body:has(#session:not([hidden])) #begin,
+ body:has(#session:not([hidden])) #stop-song,
+ body:has(#session:not([hidden])) .panel-tabs button,
+ body:has(#session:not([hidden])) .call-bar button,
+ body:has(#session:not([hidden])) #search-go,
+ body:has(#session:not([hidden])) #search-cancel,
+ body:has(#session:not([hidden])) .result button,
+ body:not(:has(#session:not([hidden]))) .enter,#create-room{font-size:18px!important}
+}

@@ -26,7 +26,7 @@ try{
  clearInterval(timer);timer=null;
  await pulse(a,ca);await enqueue(a,ca);await rpc(a,'begin_song',{room,client:ca});await enqueue(a,ca);
  console.log('PASS: 5s countdown, start ownership, stop advances, leave removes queue. Testing lost heartbeat…');
- await new Promise(r=>setTimeout(r,12500));await rpc(b,'advance_room',{room});
+ await new Promise(r=>setTimeout(r,15500));await rpc(b,'advance_room',{room});
  assert.equal((await state()).phase,'choosing');assert.equal((await call(a,'song_queue?room_id=eq.B')).data.length,0);assert.equal((await rpc(a,'live_members')).data.some(p=>p.id===ca),false);
- console.log('PASS: expired singer disappears, playback stops, pending songs removed after 12s');
+ console.log('PASS: expired singer disappears, playback stops, pending songs removed after 15s');
 }finally{clearInterval(timer);await rpc(a,'leave_room',{room,client:ca});await rpc(b,'leave_room',{room,client:cb});}
