@@ -1,6 +1,6 @@
 import { ROOM_IDS, randomName } from './room-model.mjs';
 import { config } from './config.js';
-import { VoiceRoom } from './rtc.js?v=mobile-camera-3';
+import { VoiceRoom } from './rtc.js?v=mobile-camera-4';
 import { playbackTarget, shouldStart } from './playback-clock.mjs?v=3';
 import { RoomAudio } from './room-audio.mjs?v=1';
 const roomAudio=new RoomAudio();
@@ -55,7 +55,7 @@ function render(){
  }));
  $('session').hidden=!selected;
  document.body.classList.toggle('chat-only-room',selected==='D');$('tab-search').hidden=selected==='D';
- if(selected){let self=$('self');if(!self){self=el('div','participant');self.id='self';const video=el('video','');self.append(avatar(name,photo),video,el('p','',name+' · vos'),el('small','',''));$('people-video').prepend(self);}setAvatar(self.querySelector('.avatar'),name,photo);self.querySelector('p').textContent=name+' · vos';self.querySelector('small').textContent=voice?.local.audio?'Mic encendido':'Mic apagado';const video=self.querySelector('video');video.hidden=!voice?.local.video;self.querySelector('.avatar').hidden=!!voice?.local.video;if(voice?.local.video&&!video.srcObject?.getTracks().includes(voice.local.video))playPreview(video,new MediaStream([voice.local.video]));}
+ if(selected){let self=$('self');if(!self){self=el('div','participant');self.id='self';const video=el('video','');self.append(avatar(name,photo),video,el('p','',name+' · vos'),el('small','',''));$('people-video').prepend(self);}setAvatar(self.querySelector('.avatar'),name,photo);self.querySelector('p').textContent=name+' · vos';self.querySelector('small').textContent=voice?.local.audio?'Mic encendido':'Mic apagado';const video=self.querySelector('video');video.hidden=!voice?.local.video;self.querySelector('.avatar').hidden=!!voice?.local.video;if(voice?.local.video&&!video.srcObject?.getTracks().includes(voice.local.video))playPreview(video,voice.localStreams?.video||new MediaStream([voice.local.video]));}
 
  if(selected){$('room-title').textContent=roomName(selected);$('room-status').textContent=selected==='D'?'Chat con video':(states[selected]?.phase==='choosing'?'Escogiendo':states[selected]?.title||'Escogiendo');arrangeParticipants();}
  $('people-count').textContent=`${members.filter(p=>p.roomId===selected).length} personas`;renderQueue();turnClock();updateResultButtons();
