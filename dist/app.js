@@ -45,6 +45,7 @@ const pendingSignals=[];let queue=[],advancing=false;let queuePage=0;
 const host=()=>!!selected&&states[selected]?.host_id===uid&&states[selected]?.singer_client===id;
 const now=()=>Date.now()+offset;
 const target=r=>playbackTarget(r,now(),host());
+const resumeTarget=r=>r?.started_at?target(r):0;
 let lastPulse=0,accessToken=null,confirmingStart=false,playbackKey=null,playerLoadAt=0;
 function render(){
  $('identity').replaceChildren(avatar(name,photo),el('span','',name));
@@ -99,14 +100,14 @@ function destroyPlayer(){playbackKey=null;player?.destroy?.();player=null;player
 async function confirmStart(){const r=states[selected];if(confirmingStart||!host()||r?.phase!=='playing'||r.started_at||player?.getPlayerState?.()!==1)return;confirmingStart=true;try{const {error}=await client.rpc('confirm_song_started',{room:selected,client:id,at_position:player.getCurrentTime()});if(error)throw error;await refresh();}catch(e){feedback('No se pudo confirmar el inicio: '+e.message);}finally{confirmingStart=false;}}
 function syncPlayer(){if(!selected)return;if(selected==='D'){if(player)destroyPlayer();return;}const r=states[selected];if(!r?.video_id||r.phase==='choosing'){if(player)destroyPlayer();return;}if(!player&&apiReady){createPlayer(r);return;}if(!playerReady){if(Date.now()-playerLoadAt>8000)feedback('YouTube no terminó de cargar. Podés terminar este turno y elegir otra canción.');return;}
  const key=r.video_id+':'+r.singer_client+':'+r.updated_at;
- if(playbackKey!==key){playbackKey=key;loaded=r.video_id;player.cueVideoById({videoId:loaded,startSeconds:host()?0:target(r)});return;}
+ if(playbackKey!==key){playbackKey=key;loaded=r.video_id;player.cueVideoById({videoId:loaded,startSeconds:resumeTarget(r)});return;}
  $('player-empty').hidden=true;
  if(shouldStart(r,now(),host())){
   if(!host()&&Math.abs(player.getCurrentTime()-target(r))>0.3)player.seekTo(target(r),true);
   const state=player.getPlayerState();if(![1,3].includes(state))player.playVideo();else if(state===1&&host()&&!r.started_at)confirmStart();
  }else if(player.getPlayerState()===1)player.pauseVideo();
 }
-function createPlayer(r){playerLoadAt=Date.now();loaded=r.video_id;playbackKey=r.video_id+':'+r.singer_client+':'+r.updated_at;$('player-empty').hidden=true;const frame=el('iframe','');frame.id='player';frame.title='Reproductor de karaoke';frame.allow='autoplay; encrypted-media; picture-in-picture';frame.referrerPolicy='strict-origin-when-cross-origin';frame.src='https://www.youtube-nocookie.com/embed/'+r.video_id+'?'+new URLSearchParams({enablejsapi:'1',playsinline:'1',origin:location.origin,start:String(host()?0:Math.floor(target(r))),autoplay:'0'});$('player').replaceWith(frame);player=new YT.Player('player',{events:{onReady:()=>{playerReady=true;turnClock();syncPlayer();},onStateChange:e=>{if(e.data===1)confirmStart();if(e.data===0&&host()&&states[selected]?.phase==='playing'&&states[selected]?.started_at)client.rpc('finish_song',{room:selected,client:id}).then(refresh);},onError:()=>feedback('YouTube no permite reproducir este video. Podés parar la canción.'),onAutoplayBlocked:()=>{$('enable-audio').hidden=false;}}});}
+function createPlayer(r){playerLoadAt=Date.now();loaded=r.video_id;playbackKey=r.video_id+':'+r.singer_client+':'+r.updated_at;$('player-empty').hidden=true;const frame=el('iframe','');frame.id='player';frame.title='Reproductor de karaoke';frame.allow='autoplay; encrypted-media; picture-in-picture';frame.referrerPolicy='strict-origin-when-cross-origin';frame.src='https://www.youtube-nocookie.com/embed/'+r.video_id+'?'+new URLSearchParams({enablejsapi:'1',playsinline:'1',origin:location.origin,start:String(Math.floor(resumeTarget(r))),autoplay:'0'});$('player').replaceWith(frame);player=new YT.Player('player',{events:{onReady:()=>{playerReady=true;turnClock();syncPlayer();},onStateChange:e=>{if(e.data===1)confirmStart();if(e.data===0&&host()&&states[selected]?.phase==='playing'&&states[selected]?.started_at)client.rpc('finish_song',{room:selected,client:id}).then(refresh);},onError:()=>feedback('YouTube no permite reproducir este video. Podés parar la canción.'),onAutoplayBlocked:()=>{$('enable-audio').hidden=false;}}});}
 window.onYouTubeIframeAPIReady=()=>{apiReady=true;syncPlayer();};
 const script=document.createElement('script');script.src='https://www.youtube.com/iframe_api';document.head.append(script);
 $('leave').onclick=()=>leave().catch(e=>feedback(e.message));$('home').onclick=e=>{e.preventDefault();leave().catch(e=>feedback(e.message));};
