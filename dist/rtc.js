@@ -1,3 +1,24 @@
+async function usableVideoTrack(track){
+ if(!track||track.readyState==='ended')return false;
+ if(!track.muted)return true;
+ if(typeof track.addEventListener!=='function')return false;
+ await new Promise(resolve=>{const done=()=>resolve();track.addEventListener('unmute',done,{once:true});track.addEventListener('ended',done,{once:true});setTimeout(done,1800);});
+ return track.readyState==='live'&&!track.muted;
+}
+async function openWorkingCamera(){
+ const candidates=[{width:640,height:360},true],failures=[];
+ for(let index=0;index<candidates.length;index++){
+  const video=candidates[index];
+  try{
+   const stream=await navigator.mediaDevices.getUserMedia({video,audio:false}),track=stream.getVideoTracks?.()[0]||stream.getTracks()[0];
+   if(await usableVideoTrack(track))return stream;
+   for(const item of stream.getTracks())item.stop();
+   failures.push('pista sin imagen');
+  }catch(error){if(['NotAllowedError','SecurityError'].includes(error?.name))throw error;failures.push(error?.name||'Error');}
+  if(index===0)try{for(const device of await navigator.mediaDevices.enumerateDevices())if(device.kind==='videoinput'&&device.deviceId)candidates.push({deviceId:{exact:device.deviceId}});}catch{}
+ }
+ throw new Error('Ninguna cámara entregó imagen: '+failures.join(', '));
+}
 export class VoiceRoom {
  constructor({id,send,iceServers,onStream,onStatus}) {Object.assign(this,{id,send,iceServers,onStream,onStatus});this.peers=new Map();this.local={audio:null,video:null};this.localStreams={audio:null,video:null};}
  async connect(id) {
@@ -21,7 +42,7 @@ export class VoiceRoom {
  }
  async toggle(kind) {
   if(this.local[kind]){const old=this.local[kind];this.local[kind]=null;this.localStreams[kind]=null;for(const e of this.peers.values())if(e[kind])await e[kind].sender.replaceTrack(null);old.stop();return false;}
-  const stream=await navigator.mediaDevices.getUserMedia(kind==='audio'?{audio:{echoCancellation:true,noiseSuppression:true},video:false}:{video:{width:640,height:360},audio:false});
+  const stream=kind==='audio'?await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false}):await openWorkingCamera();
   this.localStreams[kind]=stream;this.local[kind]=stream.getTracks()[0];for(const e of this.peers.values())if(e[kind])await e[kind].sender.replaceTrack(this.local[kind]);return true;
  }
  remove(id){const e=this.peers.get(id);if(e){e.pc.close();this.peers.delete(id);this.onStream(id,null);}}

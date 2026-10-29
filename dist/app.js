@@ -1,6 +1,6 @@
 import { ROOM_IDS, randomName } from './room-model.mjs';
 import { config } from './config.js';
-import { VoiceRoom } from './rtc.js?v=camera-original-stream-10';
+import { VoiceRoom } from './rtc.js?v=camera-live-frames-11';
 import { playbackTarget, shouldStart } from './playback-clock.mjs?v=3';
 import { RoomAudio } from './room-audio.mjs?v=1';
 const roomAudio=new RoomAudio();
