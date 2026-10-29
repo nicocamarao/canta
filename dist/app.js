@@ -7,7 +7,9 @@ const roomAudio=new RoomAudio();
 document.addEventListener('pointerdown',()=>roomAudio.unlock().catch(()=>{}),{passive:true});
 const updatePhysicalOrientation=()=>{const type=screen.orientation?.type;document.documentElement.classList.toggle('physical-landscape',type?type.startsWith('landscape'):screen.width>screen.height);};
 updatePhysicalOrientation();screen.orientation?.addEventListener?.('change',updatePhysicalOrientation);window.addEventListener('orientationchange',()=>setTimeout(updatePhysicalOrientation,100));
-const $=id=>document.getElementById(id), id=sessionStorage.getItem('canta:client')||crypto.randomUUID();sessionStorage.setItem('canta:client',id);
+const uuidPattern='[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}',devicePattern=new RegExp(`^canta-${uuidPattern}$`,'i');
+let deviceId=localStorage.getItem('canta:device');if(!devicePattern.test(deviceId||'')){deviceId=`canta-${crypto.randomUUID()}`;localStorage.setItem('canta:device',deviceId);}
+const $=elementId=>document.getElementById(elementId),id=deviceId;sessionStorage.removeItem('canta:client');
 const syntheticTest=new URLSearchParams(location.search).get('prueba')==='1';
 let name=syntheticTest?'Prueba Codex':localStorage.getItem('canta:name')||sessionStorage.getItem('canta:name')||randomName();
 let photo=syntheticTest?'':localStorage.getItem('canta:photo')||'';localStorage.setItem('canta:name',name);
